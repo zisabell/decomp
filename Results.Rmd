@@ -1,0 +1,53 @@
+---
+title: "Results"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+``` {r package}
+
+library(tidyverse)
+library(kableExtra)
+library(flextable)
+
+```
+
+``` {r upload files}
+
+mt_wide <- mt_smaller %>% pivot_longer(soil_moisture:Total_P_mg_kg, names_to="measurement" )
+
+```
+
+#Results
+
+``` {r table}
+
+set_flextable_defaults(
+  font.size = 12, font.family = "Open Sans",
+  font.color = "#333333",
+  table.layout = "fixed",
+  border.color = "gray",
+  padding.top = 3, padding.bottom = 3,
+  padding.left = 4, padding.right = 4)
+
+tab <- mt_wide %>% group_by(landuse, measurement) %>% 
+  summarise(mean = sprintf("%1.2f", mean(value)),
+            sd = sprintf("(%1.2f)", sd(value))) %>% 
+  unite("value",mean, sd, sep=" ") %>% 
+  pivot_wider(names_from=landuse, values_from=value) 
+
+tab %>% 
+  flextable() %>% 
+  labelizor(labels = c(measurement = "Measurements", Food_forest = "Food forest", 
+                       NH4 = "Ammonium (mg/kg)", NO2_NO3 = "Nitrite and Nitrate (mg/kg)",
+                       Total_P_mg_kg = "Total fosfor (mg/kg)", b.d. = "Bulk density (g/cm3)",
+                       ph_kcl = "pH-KCl", soil_moisture = "Soil moisture (%)", 
+                       som = "Soil organic matter (%)")) %>%
+  set_table_properties(layout = "autofit") %>%
+  save_as_docx(path = "table.docx")
+
+```
+
