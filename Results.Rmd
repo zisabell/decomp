@@ -1,10 +1,11 @@
 ---
 title: "Results"
+author: "Isabelle van der Zanden and Gelieke Steeghs"
 output: word_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE, echo = FALSE, warning = FALSE)
 ```
 
 ``` {r package}
@@ -12,42 +13,89 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(kableExtra)
 library(flextable)
+library(ggpubr)
+library(rstatix)
+library(readxl)
+library(writexl)
+library(lme4)
+library(wesanderson)
 
 ```
 
-``` {r upload files}
+``` {r upload and mutate files}
+lml <- read_csv2("MASTER_LML.csv")
 
-mt_wide <- mt_smaller %>% pivot_longer(soil_moisture:Total_P_mg_kg, names_to="measurement" )
+lml$litter_sp <- factor(lml$litter_sp, levels=c("Alder","Hazel","Chestnut"))
+lml$mesh_size <- factor(lml$mesh_size, levels=c("Fine","Medium","Coarse"))
+
+mt <- read_csv2("MASTERFILE_decomp_10.csv")
+
+mt_2 <- mt %>% mutate(age = 2021-year_of_landuse,
+                      earthworms_2021 = compost_worms + soil_eating_worms + pendelaars)
+
+mt_2 <- mt_2 %>% rowwise() %>% mutate(earthworms_2022 = sum(c_across(contains("Abundance"))))
+mt_2 <- mt_2 %>% rename("vb_code" = "code")
+
+mt_2_lu <- mt_2 %>% select(vb_code, landuse)
+
+# join litter mass data with landuse data
+
+lml_2 <- lml %>% left_join(mt_2_lu, by ="vb_code")
 
 ```
 
-#Results
+# Results
 
 ``` {r table}
+glimpse(mt_2)
+mt_wide <- mt_2 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Biomass_juvenile), names_to="measurement" )
 
-set_flextable_defaults(
-  font.size = 12, font.family = "Open Sans",
-  font.color = "#333333",
-  table.layout = "fixed",
-  border.color = "gray",
-  padding.top = 3, padding.bottom = 3,
-  padding.left = 4, padding.right = 4)
+# check which columns to keep in table! maybe just sum # of earthworms or sum of biomass
+
+# set_flextable_defaults(
+#   font.size = 12, font.family = "Open Sans",
+#   font.color = "#333333",
+#   table.layout = "fixed",
+#   border.color = "gray",
+#   padding.top = 3, padding.bottom = 3,
+#   padding.left = 4, padding.right = 4)
 
 tab <- mt_wide %>% group_by(landuse, measurement) %>% 
-  summarise(mean = sprintf("%1.2f", mean(value)),
-            sd = sprintf("(%1.2f)", sd(value))) %>% 
+  summarise(mean = sprintf("%1.2f", mean(value, na.rm = TRUE)),
+            sd = sprintf("(%1.2f)", sd(value, na.rm = TRUE))) %>% 
   unite("value",mean, sd, sep=" ") %>% 
   pivot_wider(names_from=landuse, values_from=value) 
+
+# tab above needs to be reordered before making flextable
 
 tab %>% 
   flextable() %>% 
   labelizor(labels = c(measurement = "Measurements", Food_forest = "Food forest", 
-                       NH4 = "Ammonium (mg/kg)", NO2_NO3 = "Nitrite and Nitrate (mg/kg)",
+                       NH4_mg_kg = "Ammonium (mg/kg)", NO2_NO3_mg_kg = "Nitrite and Nitrate (mg/kg)",
                        Total_P_mg_kg = "Total fosfor (mg/kg)", b.d. = "Bulk density (g/cm3)",
                        ph_kcl = "pH-KCl", soil_moisture = "Soil moisture (%)", 
                        som = "Soil organic matter (%)")) %>%
-  set_table_properties(layout = "autofit") %>%
-  save_as_docx(path = "table.docx")
+  set_table_properties(layout = "autofit")
+
+# labels need to be completed for all measurements included in table
 
 ```
 
+## Litter mass loss
+
+``` {r plot, boxplot litter mass loss, fig.dim = c(8,10)}
+
+lml_2 %>% group_by(mesh_size, litter_sp) %>%
+  ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
+  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
+  scale_fill_manual(values=wes_palette("Royal1"), labels=c("Food forest","Grassland")) + 
+  geom_point(position = position_jitterdodge(0.4), 
+             pch=16, color="black",
+             show.legend = FALSE) +
+  facet_grid(mesh_size ~ litter_sp) +
+  theme_bw(base_size = 16) +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(y="Litter mass loss (%)", x="Landuse", fill="Landuse")
+
+
+``` 
