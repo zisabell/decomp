@@ -47,7 +47,6 @@ lml_2 <- lml %>% left_join(mt_2_lu, by ="vb_code")
 # Results
 
 ``` {r table}
-glimpse(mt_2)
 mt_wide <- mt_2 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Biomass_juvenile), names_to="measurement" )
 
 # check which columns to keep in table! maybe just sum # of earthworms or sum of biomass
@@ -78,6 +77,59 @@ tab %>%
   set_table_properties(layout = "autofit")
 
 # labels need to be completed for all measurements included in table
+
+```
+## Earthworm biomass functional groups
+
+``` {r plot, stacked bar earthworm functional groups, fig.dim = c(10,8)}
+
+mt_ew_long_b <- mt_2 %>% pivot_longer(cols=c(Biomass_anecic, Biomass_endogeic, Biomass_epigeic, Biomass_juvenile),
+                                    names_to="Groups",values_to="biomass")
+
+mt_ew_long_b$location <- factor(mt_ew_long_b$location, levels = c("Haarzuilens", "Vlaardingen","Boelenslaan", "Amsterdam"),
+                                labels = c("Location 1", "Location 2", "Location 3", "Location 4"))
+
+mt_ew_long_b %>% 
+  group_by(location, landuse, Groups) %>%
+  summarize(average = mean(biomass, na.rm=TRUE), .groups="drop") %>%
+  ggplot(aes(x=landuse, y=average, fill=Groups)) + 
+  geom_col(width=0.6) +
+  scale_fill_manual(values=wes_palette("Cavalcanti1"), labels=c("Anecic earthworms",
+                                                                   "Endogeic earthworms",
+                                                                   "Epigeic earthworms",
+                                                                   "Juveniles")) +
+  facet_grid(~location) +
+  theme_bw(base_size = 18) +
+  theme(legend.position="bottom") +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(x="Landuse", y="Average earthworm biomass per plot (gr)",  fill="Microbial groups")
+
+```
+
+## PLFA/NLFA biomass microbial groups
+
+``` {r plot, stacked bar microbial groups, fig.dim = c(10,8)}
+
+mt_plfa_long <- mt_2 %>% pivot_longer(cols=c(Bacteria_total, Actinobacteria_total, Fungi_total, AMF_NLFA),
+                                      names_to="Groups",values_to="concentration")
+
+mt_plfa_long$location <- factor(mt_plfa_long$location, levels = c("Haarzuilens", "Vlaardingen","Boelenslaan", "Amsterdam"),
+                  labels = c("Location 1", "Location 2", "Location 3", "Location 4"))
+
+mt_plfa_long %>% 
+  group_by(location,landuse, Groups) %>%
+  summarize(average = mean(concentration), .groups="drop") %>%
+  ggplot(aes(x=landuse, y=average, fill=Groups)) + 
+  geom_col(width=0.6) +
+  scale_fill_manual(values=wes_palette("Cavalcanti1"), labels=c("Actinobacteria",
+                                                                "AMF",
+                                                                "Bacteria",
+                                                                "Fungi")) +
+  facet_grid(~location)  +
+  theme_bw(base_size = 18) +
+  theme(legend.position="bottom") +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(x="Landuse", y="Average estimation microbial biomass (ug/gr of soil)",  fill="Microbial groups")
 
 ```
 
