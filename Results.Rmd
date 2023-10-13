@@ -39,7 +39,7 @@ mt_2 <- mt %>% mutate(age = 2021-year_of_landuse,
 mt_2 <- mt_2 %>% rowwise() %>% mutate(earthworms_2022 = sum(c_across(contains("Abundance"))))
 mt_2 <- mt_2 %>% rename("vb_code" = "code")
 
-mt_2_lu <- mt_2 %>% select(vb_code, landuse)
+mt_2_lu <- mt_2 %>% dplyr::select(vb_code, landuse)
 
 # filter out only the 4 subplots that have been used for the litter mass experiment
 mt_3 <- mt_2 %>% filter(plot_nr < 5)
