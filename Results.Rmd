@@ -38,6 +38,9 @@ mt_2 <- mt_2 %>% rename("vb_code" = "code")
 
 mt_2_lu <- mt_2 %>% select(vb_code, landuse)
 
+# filter out only the 4 subplots that have been used for the litter mass experiment
+mt_3 <- mt_2 %>% filter(plot_nr < 5)
+
 # join litter mass data with landuse data
 
 lml_2 <- lml %>% left_join(mt_2_lu, by ="vb_code")
