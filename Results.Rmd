@@ -74,6 +74,23 @@ mt_wide <- mt_4 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Spri
 
 # create custom order for parameters in the table
 
+# function to run ANOVA test on all parameters (NEEDS TO BE ADJUSTED, GIVES ERRORS STILL)
+# table_anova <- function(lme_data, v1, v2, v3) {
+#   lme_data.lmeFit <- lmer(lme_data[c(v1)] ~ lme_data[c(v2)] + (1|lme_data[c(v3)]),data=lme_data, 
+#                       na.action = "na.omit")
+#   anova(lme_data.lmeFit)
+# 
+#   cld(lsmeans(lme_data.lmeFit,~ v2,adjust="tukey"), Letters = c(letters))
+# }
+# 
+# table_anova(mt_4, ph_kcl, landuse, location)
+
+# run ANOVA for ph_kcl as a test
+mt_4.lmeFit <- lmer(ph_kcl ~ landuse + (1|location),data=mt_4, na.action = "na.omit")
+anova(mt_4.lmeFit)
+
+cld(lsmeans(mt_4.lmeFit,~ landuse,adjust="tukey"), Letters = c(letters))
+
 tab_order <- c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_kg','NH4_mg_kg','Total_P_mg_kg',
                'Olsen_P_mg_kg','earthworms_2022','biomass_ew_total','Springtails_nr_kg','Mites_oribatid_kg',
                'Mites_other_kg','nr_nematodes_gr_dry',
