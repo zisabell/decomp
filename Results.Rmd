@@ -19,6 +19,9 @@ library(readxl)
 library(writexl)
 library(lme4)
 library(wesanderson)
+library(multcomp)
+library(multcompView)
+library(emmeans)
 
 ```
 
@@ -91,13 +94,13 @@ tab %>%
                        NH4_mg_kg = "Ammonium (mg/kg)", NO2_NO3_mg_kg = "Nitrite and Nitrate (mg/kg)",
                        Total_P_mg_kg = "Total fosfor (mg/kg)", b.d. = "Bulk density (g/cm3)",
                        ph_kcl = "pH-KCl", soil_moisture = "Soil moisture (%)", 
-                       som_percentage = "Soil organic matter (%)")) 
-                       earthworms_2022 = "Earthworms abundance", biomass_ew_total = "Earthworms biomass",
+                       som_percentage = "Soil organic matter (%)", earthworms_2022 = "Earthworms abundance",
+                       biomass_ew_total = "Earthworms biomass",
                        Springtails_nr_kg = "Springtails abundance", Mites_oribatid_kg = "Mites oribatid abundance",
                        Mites_other_kg = "Mites other abundance", nr_nematodes_gr_dry = "Nematodes",
                        Bacteria_total = "Bacteria, total", Microbial = "Microbial",
-                       Actinobacteria_total = "Actinobacteria, total", Fungi_total = "Fungi, total"
-                       Total_plfa = "PFLA, total", AMF_NLFA = "AMF NFLA" %>%
+                       Actinobacteria_total = "Actinobacteria, total", Fungi_total = "Fungi, total",
+                       Total_plfa = "PFLA, total", AMF_NLFA = "AMF NFLA")) %>%
   set_table_properties(layout = "autofit")
 
 # labels need to be completed for all measurements included in table (add units and such)
