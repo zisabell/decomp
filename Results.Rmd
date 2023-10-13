@@ -59,7 +59,7 @@ mt_4 <- cbind(mt_4, biomass_ew_total = rowSums(mt_3[c('Biomass_anecic','Biomass_
 mt_wide <- mt_4 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Springtails_nr_kg,
                                         earthworms_2022,biomass_ew_total), names_to="measurement")
 
-# check which columns to keep in table! maybe just sum # of earthworms or sum of biomass
+# check which columns to keep in table! maybe just sum # of earthworms or sum of biomass. maybe also sum of mites?
 
 # set_flextable_defaults(
 #   font.size = 12, font.family = "Open Sans",
@@ -69,10 +69,18 @@ mt_wide <- mt_4 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Spri
 #   padding.top = 3, padding.bottom = 3,
 #   padding.left = 4, padding.right = 4)
 
+# create custom order for parameters in the table
+
+tab_order <- c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_kg','NH4_mg_kg','Total_P_mg_kg',
+               'Olsen_P_mg_kg','earthworms_2022','biomass_ew_total','Springtails_nr_kg','Mites_oribatid_kg',
+               'Mites_other_kg','nr_nematodes_gr_dry',
+               'Bacteria_total','Microbial','Actinobacteria_total','Fungi_total','Total_plfa','AMF_NLFA')
+
 tab <- mt_wide %>% group_by(landuse, measurement) %>% 
   summarise(mean = sprintf("%1.2f", mean(value, na.rm = TRUE)),
             sd = sprintf("(%1.2f)", sd(value, na.rm = TRUE))) %>% 
   unite("value",mean, sd, sep=" ") %>% 
+  arrange(factor(measurement, levels = tab_order)) %>%
   pivot_wider(names_from=landuse, values_from=value) 
 
 # tab above needs to be reordered before making flextable
