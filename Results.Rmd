@@ -50,7 +50,14 @@ lml_2 <- lml %>% left_join(mt_2_lu, by ="vb_code")
 # Results
 
 ``` {r table}
-mt_wide <- mt_2 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Biomass_juvenile), names_to="measurement" )
+
+# add columns with sum of mites and earthworms biomass
+
+mt_4 <- cbind(mt_3, mites_sum = rowSums(mt_3[c('Mites_oribatid_kg','Mites_other_kg')]))
+mt_4 <- cbind(mt_4, biomass_ew_total = rowSums(mt_3[c('Biomass_anecic','Biomass_endogeic','Biomass_epigeic','Biomass_juvenile')]))
+
+mt_wide <- mt_4 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Springtails_nr_kg,
+                                        earthworms_2022,biomass_ew_total), names_to="measurement")
 
 # check which columns to keep in table! maybe just sum # of earthworms or sum of biomass
 
