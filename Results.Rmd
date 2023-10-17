@@ -47,7 +47,7 @@ lml_2 <- lml %>% left_join(mt_2_lu, by ="vb_code")
 # Results
 
 ``` {r table}
-mt_wide <- mt_2 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Biomass_juvenile), names_to="measurement" )
+mt_long <- mt_2 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Biomass_juvenile), names_to="measurement" )
 
 # check which columns to keep in table! maybe just sum # of earthworms or sum of biomass
 
@@ -59,7 +59,7 @@ mt_wide <- mt_2 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Biom
 #   padding.top = 3, padding.bottom = 3,
 #   padding.left = 4, padding.right = 4)
 
-tab <- mt_wide %>% group_by(landuse, measurement) %>% 
+tab <- mt_long %>% group_by(landuse, measurement) %>% 
   summarise(mean = sprintf("%1.2f", mean(value, na.rm = TRUE)),
             sd = sprintf("(%1.2f)", sd(value, na.rm = TRUE))) %>% 
   unite("value",mean, sd, sep=" ") %>% 
