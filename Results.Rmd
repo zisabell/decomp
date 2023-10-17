@@ -19,6 +19,9 @@ library(readxl)
 library(writexl)
 library(lme4)
 library(wesanderson)
+library(multcomp)
+library(multcompView)
+library(emmeans)
 
 ```
 
@@ -36,7 +39,10 @@ mt_2 <- mt %>% mutate(age = 2021-year_of_landuse,
 mt_2 <- mt_2 %>% rowwise() %>% mutate(earthworms_2022 = sum(c_across(contains("Abundance"))))
 mt_2 <- mt_2 %>% rename("vb_code" = "code")
 
-mt_2_lu <- mt_2 %>% select(vb_code, landuse)
+mt_2_lu <- mt_2 %>% dplyr::select(vb_code, landuse)
+
+# filter out only the 4 subplots that have been used for the litter mass experiment
+mt_3 <- mt_2 %>% filter(plot_nr < 5)
 
 # join litter mass data with landuse data
 
@@ -47,9 +53,15 @@ lml_2 <- lml %>% left_join(mt_2_lu, by ="vb_code")
 # Results
 
 ``` {r table}
-mt_long <- mt_2 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Biomass_juvenile), names_to="measurement" )
+# add columns with sum of mites and earthworms biomass
 
-# check which columns to keep in table! maybe just sum # of earthworms or sum of biomass
+mt_4 <- cbind(mt_3, mites_sum = rowSums(mt_3[c('Mites_oribatid_kg','Mites_other_kg')]))
+mt_4 <- cbind(mt_4, biomass_ew_total = rowSums(mt_3[c('Biomass_anecic','Biomass_endogeic','Biomass_epigeic','Biomass_juvenile')]))
+
+mt_wide <- mt_4 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Springtails_nr_kg,
+                                        earthworms_2022,biomass_ew_total), names_to="measurement")
+
+# check which columns to keep in table! maybe just sum # of earthworms or sum of biomass. maybe also sum of mites?
 
 # set_flextable_defaults(
 #   font.size = 12, font.family = "Open Sans",
@@ -59,10 +71,35 @@ mt_long <- mt_2 %>% pivot_longer(cols=c(ph_kcl:Olsen_P_mg_kg,Bacteria_total:Biom
 #   padding.top = 3, padding.bottom = 3,
 #   padding.left = 4, padding.right = 4)
 
-tab <- mt_long %>% group_by(landuse, measurement) %>% 
+# create custom order for parameters in the table
+
+# function to run ANOVA test on all parameters (NEEDS TO BE ADJUSTED, GIVES ERRORS STILL)
+# table_anova <- function(lme_data, v1, v2, v3) {
+#   lme_data.lmeFit <- lmer(lme_data[c(v1)] ~ lme_data[c(v2)] + (1|lme_data[c(v3)]),data=lme_data, 
+#                       na.action = "na.omit")
+#   anova(lme_data.lmeFit)
+# 
+#   cld(lsmeans(lme_data.lmeFit,~ v2,adjust="tukey"), Letters = c(letters))
+# }
+# 
+# table_anova(mt_4, ph_kcl, landuse, location)
+
+# run ANOVA for ph_kcl as a test
+mt_4.lmeFit <- lmer(ph_kcl ~ landuse + (1|location),data=mt_4, na.action = "na.omit")
+anova(mt_4.lmeFit)
+
+cld(lsmeans(mt_4.lmeFit,~ landuse,adjust="tukey"), Letters = c(letters))
+
+tab_order <- c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_kg','NH4_mg_kg','Total_P_mg_kg',
+               'Olsen_P_mg_kg','earthworms_2022','biomass_ew_total','Springtails_nr_kg','Mites_oribatid_kg',
+               'Mites_other_kg','nr_nematodes_gr_dry',
+               'Bacteria_total','Microbial','Actinobacteria_total','Fungi_total','Total_plfa','AMF_NLFA')
+
+tab <- mt_wide %>% group_by(landuse, measurement) %>% 
   summarise(mean = sprintf("%1.2f", mean(value, na.rm = TRUE)),
             sd = sprintf("(%1.2f)", sd(value, na.rm = TRUE))) %>% 
   unite("value",mean, sd, sep=" ") %>% 
+  arrange(factor(measurement, levels = tab_order)) %>%
   pivot_wider(names_from=landuse, values_from=value) 
 
 # tab above needs to be reordered before making flextable
@@ -73,10 +110,16 @@ tab %>%
                        NH4_mg_kg = "Ammonium (mg/kg)", NO2_NO3_mg_kg = "Nitrite and Nitrate (mg/kg)",
                        Total_P_mg_kg = "Total fosfor (mg/kg)", b.d. = "Bulk density (g/cm3)",
                        ph_kcl = "pH-KCl", soil_moisture = "Soil moisture (%)", 
-                       som = "Soil organic matter (%)")) %>%
+                       som_percentage = "Soil organic matter (%)", earthworms_2022 = "Earthworms abundance",
+                       biomass_ew_total = "Earthworms biomass",
+                       Springtails_nr_kg = "Springtails abundance", Mites_oribatid_kg = "Mites oribatid abundance",
+                       Mites_other_kg = "Mites other abundance", nr_nematodes_gr_dry = "Nematodes",
+                       Bacteria_total = "Bacteria, total", Microbial = "Microbial",
+                       Actinobacteria_total = "Actinobacteria, total", Fungi_total = "Fungi, total",
+                       Total_plfa = "PFLA, total", AMF_NLFA = "AMF NFLA")) %>%
   set_table_properties(layout = "autofit")
 
-# labels need to be completed for all measurements included in table
+# labels need to be completed for all measurements included in table (add units and such)
 
 ```
 ## Earthworm biomass functional groups
