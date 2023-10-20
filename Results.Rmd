@@ -40,14 +40,14 @@ mt_2 <- mt %>% mutate(age = 2021-year_of_landuse,
 mt_2 <- mt_2 %>% rowwise() %>% mutate(earthworms_2022 = sum(c_across(contains("Abundance"))))
 mt_2 <- mt_2 %>% rename("vb_code" = "code")
 
-mt_2_lu <- mt_2 %>% dplyr::select(vb_code, landuse)
+mt_2_lu_loc <- mt_2 %>% dplyr::select(vb_code, landuse, location)
 
 # filter out only the 4 subplots that have been used for the litter mass experiment
 mt_3 <- mt_2 %>% filter(plot_nr < 5)
 
-# join litter mass data with landuse data
+# join litter mass data with landuse & location data
 
-lml_2 <- lml %>% left_join(mt_2_lu, by ="vb_code")
+lml_2 <- lml %>% left_join(mt_2_lu_loc, by ="vb_code")
 
 # sum columns mites and earthworms
 mt_4 <- cbind(mt_3, mites_sum = rowSums(mt_3[c('Mites_oribatid_kg','Mites_other_kg')]))
@@ -148,7 +148,14 @@ lml_2 %>% group_by(mesh_size, litter_sp) %>%
   facet_grid(mesh_size ~ litter_sp) +
   theme_bw(base_size = 16) +
   scale_x_discrete(labels=c("Food forest", "Grassland")) +
-  labs(y="Litter mass loss (%)", x="Landuse", fill="Landuse")
+  labs(y="Litter mass loss (%)", x="Land use", fill="Landuse")
+
+
+# Three-way ANOVA
+threeway.lmeFit <- lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse/vb_code),data=lml_2, 
+                      na.action = "na.omit")
+anova(threeway.lmeFit)
+cld(lsmeans(threeway.lmeFit,~ landuse * litter_sp * mesh_size,adjust="tukey"), Letters = c(letters))
 
 
 ``` 
