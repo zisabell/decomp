@@ -40,14 +40,14 @@ mt_2 <- mt %>% mutate(age = 2021-year_of_landuse,
 mt_2 <- mt_2 %>% rowwise() %>% mutate(earthworms_2022 = sum(c_across(contains("Abundance"))))
 mt_2 <- mt_2 %>% rename("vb_code" = "code")
 
-mt_2_lu <- mt_2 %>% dplyr::select(vb_code, landuse)
+mt_2_lu_loc <- mt_2 %>% dplyr::select(vb_code, landuse, location)
 
 # filter out only the 4 subplots that have been used for the litter mass experiment
 mt_3 <- mt_2 %>% filter(plot_nr < 5)
 
-# join litter mass data with landuse data
+# join litter mass data with landuse & location data
 
-lml_2 <- lml %>% left_join(mt_2_lu, by ="vb_code")
+lml_2 <- lml %>% left_join(mt_2_lu_loc, by ="vb_code")
 
 # sum columns mites and earthworms
 mt_4 <- cbind(mt_3, mites_sum = rowSums(mt_3[c('Mites_oribatid_kg','Mites_other_kg')]))
@@ -138,6 +138,14 @@ tab %>%
 
 ``` {r plot, boxplot litter mass loss, fig.dim = c(8,10)}
 
+# Three-way ANOVA
+threeway.lmeFit <- lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse/vb_code),data=lml_2, 
+                      na.action = "na.omit")
+anova(threeway.lmeFit)
+threeway_cld <- cld(lsmeans(threeway.lmeFit,~ landuse * litter_sp * mesh_size,adjust="tukey"), Letters = c(letters))
+
+# Three-way interaction letters are there but it looks kind of messy
+
 lml_2 %>% group_by(mesh_size, litter_sp) %>%
   ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
   geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
@@ -145,10 +153,11 @@ lml_2 %>% group_by(mesh_size, litter_sp) %>%
   geom_point(position = position_jitterdodge(0.4), 
              pch=16, color="black",
              show.legend = FALSE) +
+  geom_text(data = threeway_cld, aes(x = landuse, y = upper.CL, label = .group)) +
   facet_grid(mesh_size ~ litter_sp) +
   theme_bw(base_size = 16) +
   scale_x_discrete(labels=c("Food forest", "Grassland")) +
-  labs(y="Litter mass loss (%)", x="Landuse", fill="Landuse")
+  labs(y="Litter mass loss (%)", x="Land use", fill="Landuse")
 
 
 ``` 
@@ -208,5 +217,16 @@ mt_plfa_long %>%
   theme(legend.position="bottom") +
   scale_x_discrete(labels=c("Food forest", "Grassland")) +
   labs(x="Landuse", y="Average estimation microbial biomass (ug/gr of soil)",  fill="Microbial groups")
+
+# Run ANOVAs to test for the effect of land use vs location -> need to make figures out of this
+# AMF_NLFA is the only one significant for land use
+mt_2.lmeFit <- lmer(AMF_NLFA ~ landuse + (1|location),data=mt_2, na.action = "na.omit")
+anova(mt_2.lmeFit)
+cld(lsmeans(mt_2.lmeFit,~ landuse,adjust="tukey"), Letters = c(letters))
+# Bacteria_total is the only one significant for location
+mt_2.lmeFit <- lmer(Bacteria_total ~ location + (1|location),data=mt_2, na.action = "na.omit")
+anova(mt_2.lmeFit)
+cld(lsmeans(mt_2.lmeFit,~ location,adjust="tukey"), Letters = c(letters))
+
 
 ```
