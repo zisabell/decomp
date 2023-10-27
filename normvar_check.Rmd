@@ -113,3 +113,288 @@ qqPlot(residuals(models$ph_kcl))
 cld(lsmeans(models$ph_kcl,~ landuse, adjust="tukey"), Letters = c(letters))
 shapiro.test(residuals(models$ph_kcl))
 ```
+
+### SOM
+
+``` {R data check som}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(som_percentage),sd=sd(som_percentage),var=var(som_percentage))
+variances_loc_lu$som_percentage
+# par(mfrow=c(1,2))
+normality$som_percentage
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$som_percentage, res))
+qqPlot(residuals(models$som_percentage))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$som_percentage,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$som_percentage))
+```
+
+### b.d.
+
+``` {R data check b.d.}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(b.d.),sd=sd(b.d.),var=var(b.d.))
+variances_loc_lu$b.d.
+# par(mfrow=c(1,2))
+normality$b.d.
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$b.d., res))
+qqPlot(residuals(models$b.d.))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$b.d.,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$b.d.))
+```
+
+### moisture_percentage
+
+``` {R data check moisture_percentage}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(moisture_percentage),sd=sd(moisture_percentage),var=var(moisture_percentage))
+variances_loc_lu$moisture_percentage
+# par(mfrow=c(1,2))
+normality$moisture_percentage
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$moisture_percentage, res))
+qqPlot(residuals(models$moisture_percentage))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$moisture_percentage,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$moisture_percentage))
+```
+
+### NO2_NO3_mg_kg
+
+``` {R data check NO2_NO3_mg_kg}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(NO2_NO3_mg_kg),sd=sd(NO2_NO3_mg_kg),var=var(NO2_NO3_mg_kg))
+variances_loc_lu$NO2_NO3_mg_kg
+# par(mfrow=c(1,2))
+normality$NO2_NO3_mg_kg
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$NO2_NO3_mg_kg, res))
+qqPlot(residuals(models$NO2_NO3_mg_kg))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$NO2_NO3_mg_kg,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$NO2_NO3_mg_kg))
+```
+
+### NH4_mg_kg
+
+``` {R data check NH4_mg_kg}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(NH4_mg_kg),sd=sd(NH4_mg_kg),var=var(NH4_mg_kg))
+variances_loc_lu$NH4_mg_kg
+# par(mfrow=c(1,2))
+normality$NH4_mg_kg
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$NH4_mg_kg, res))
+qqPlot(residuals(models$NH4_mg_kg))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$NH4_mg_kg,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$NH4_mg_kg))
+```
+
+### Total_P_mg_kg
+
+``` {R data check Total_P_mg_kg}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(Total_P_mg_kg),sd=sd(Total_P_mg_kg),var=var(Total_P_mg_kg))
+variances_loc_lu$Total_P_mg_kg
+# par(mfrow=c(1,2))
+normality$Total_P_mg_kg
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$Total_P_mg_kg, res))
+qqPlot(residuals(models$Total_P_mg_kg))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$Total_P_mg_kg,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$Total_P_mg_kg))
+```
+
+### Olsen_P_mg_kg
+
+``` {R data check Olsen_P_mg_kg}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(Olsen_P_mg_kg),sd=sd(Olsen_P_mg_kg),var=var(Olsen_P_mg_kg))
+variances_loc_lu$Olsen_P_mg_kg
+# par(mfrow=c(1,2))
+normality$Olsen_P_mg_kg
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$Olsen_P_mg_kg, res))
+qqPlot(residuals(models$Olsen_P_mg_kg))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$Olsen_P_mg_kg,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$Olsen_P_mg_kg))
+```
+
+### earthworms_2022
+
+``` {R data check earthworms_2022}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(earthworms_2022),sd=sd(earthworms_2022),var=var(earthworms_2022))
+variances_loc_lu$earthworms_2022
+# par(mfrow=c(1,2))
+normality$earthworms_2022
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$earthworms_2022, res))
+qqPlot(residuals(models$earthworms_2022))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$earthworms_2022,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$earthworms_2022))
+```
+
+### biomass_ew_total
+
+``` {R data check biomass_ew_total}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(biomass_ew_total),sd=sd(biomass_ew_total),var=var(biomass_ew_total))
+variances_loc_lu$biomass_ew_total
+# par(mfrow=c(1,2))
+normality$biomass_ew_total
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$biomass_ew_total, res))
+qqPlot(residuals(models$biomass_ew_total))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$biomass_ew_total,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$biomass_ew_total))
+```
+
+### Springtails_nr_kg
+
+``` {R data check Springtails_nr_kg}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(Springtails_nr_kg),sd=sd(Springtails_nr_kg),var=var(Springtails_nr_kg))
+variances_loc_lu$Springtails_nr_kg
+# par(mfrow=c(1,2))
+normality$Springtails_nr_kg
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$Springtails_nr_kg, res))
+qqPlot(residuals(models$Springtails_nr_kg))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$Springtails_nr_kg,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$Springtails_nr_kg))
+```
+
+### Mites_oribatid_kg
+
+``` {R data check Mites_oribatid_kg}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(Mites_oribatid_kg),sd=sd(Mites_oribatid_kg),var=var(Mites_oribatid_kg))
+variances_loc_lu$Mites_oribatid_kg
+# par(mfrow=c(1,2))
+normality$Mites_oribatid_kg
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$Mites_oribatid_kg, res))
+qqPlot(residuals(models$Mites_oribatid_kg))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$Mites_oribatid_kg,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$Mites_oribatid_kg))
+```
+
+### Mites_other_kg
+
+``` {R data check Mites_other_kg}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(Mites_other_kg),sd=sd(Mites_other_kg),var=var(Mites_other_kg))
+variances_loc_lu$Mites_other_kg
+# par(mfrow=c(1,2))
+normality$Mites_other_kg
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$Mites_other_kg, res))
+qqPlot(residuals(models$Mites_other_kg))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$Mites_other_kg,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$Mites_other_kg))
+```
+
+### nr_nematodes_gr_dry
+
+``` {R data check nr_nematodes_gr_dry}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(nr_nematodes_gr_dry),sd=sd(nr_nematodes_gr_dry),var=var(nr_nematodes_gr_dry))
+variances_loc_lu$nr_nematodes_gr_dry
+# par(mfrow=c(1,2))
+normality$nr_nematodes_gr_dry
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$nr_nematodes_gr_dry, res))
+qqPlot(residuals(models$nr_nematodes_gr_dry))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$nr_nematodes_gr_dry,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$nr_nematodes_gr_dry))
+```
+
+### Bacteria_total
+
+``` {R data check Bacteria_total}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(Bacteria_total),sd=sd(Bacteria_total),var=var(Bacteria_total))
+variances_loc_lu$Bacteria_total
+# par(mfrow=c(1,2))
+normality$Bacteria_total
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$Bacteria_total, res))
+qqPlot(residuals(models$Bacteria_total))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$Bacteria_total,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$Bacteria_total))
+```
+
+### Microbial
+
+``` {R data check Microbial}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(Microbial),sd=sd(Microbial),var=var(Microbial))
+variances_loc_lu$Microbial
+# par(mfrow=c(1,2))
+normality$Microbial
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$Microbial, res))
+qqPlot(residuals(models$Microbial))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$Microbial,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$Microbial))
+```
+
+### Actinobacteria_total
+
+``` {R data check Actinobacteria_total}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(Actinobacteria_total),sd=sd(Actinobacteria_total),var=var(Actinobacteria_total))
+variances_loc_lu$Actinobacteria_total
+# par(mfrow=c(1,2))
+normality$Actinobacteria_total
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$Actinobacteria_total, res))
+qqPlot(residuals(models$Actinobacteria_total))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$Actinobacteria_total,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$Actinobacteria_total))
+```
+
+### Fungi_total
+
+``` {R data check Fungi_total}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(Fungi_total),sd=sd(Fungi_total),var=var(Fungi_total))
+variances_loc_lu$Fungi_total
+# par(mfrow=c(1,2))
+normality$Fungi_total
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$Fungi_total, res))
+qqPlot(residuals(models$Fungi_total))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$Fungi_total,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$Fungi_total))
+```
+
+### Total_plfa
+
+``` {R data check Total_plfa}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(Total_plfa),sd=sd(Total_plfa),var=var(Total_plfa))
+variances_loc_lu$Total_plfa
+# par(mfrow=c(1,2))
+normality$Total_plfa
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$Total_plfa, res))
+qqPlot(residuals(models$Total_plfa))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$Total_plfa,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$Total_plfa))
+```
+
+### AMF_NLFA
+
+``` {R data check AMF_NLFA}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(AMF_NLFA),sd=sd(AMF_NLFA),var=var(AMF_NLFA))
+variances_loc_lu$AMF_NLFA
+# par(mfrow=c(1,2))
+normality$AMF_NLFA
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$AMF_NLFA, res))
+qqPlot(residuals(models$AMF_NLFA))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$AMF_NLFA,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$AMF_NLFA))
+```
