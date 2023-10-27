@@ -65,20 +65,6 @@ variances_loc_lu <- map(vars, ~leveneTest(mt_4[[.x]] ~ landuse * location, data 
 variances_loc_lu
 
 variances_lu <- map(vars, ~leveneTest(mt_4[[.x]] ~ landuse, data = mt_4))
-```
-
-
-``` {R data check, fig.dim=c(12, 18)}
-
-# normality and equal variances for the litter mass loss data
-
-threeway.lmeFit <- lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse/vb_code),data=lml_2, 
-                      na.action = "na.omit")
-
-variances_lml <- leveneTest(litter_mass_loss_final ~ landuse * location, data = lml_2)
-variances_lml
-
-plot(threeway.lmeFit) # linearity check
-
+variances_lu
 
 ```

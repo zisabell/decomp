@@ -10,6 +10,7 @@ knitr::opts_chunk$set(message = FALSE, echo = FALSE, warning = FALSE)
 
 ``` {r package}
 
+library(Rmisc)
 library(tidyverse)
 library(kableExtra)
 library(flextable)
@@ -17,6 +18,7 @@ library(ggpubr)
 library(rstatix)
 library(readxl)
 library(writexl)
+library(car)
 library(lme4)
 library(wesanderson)
 library(multcomp)
@@ -37,8 +39,8 @@ mt <- read_csv2("MASTERFILE_decomp_10.csv")
 mt_2 <- mt %>% mutate(age = 2021-year_of_landuse,
                       earthworms_2021 = compost_worms + soil_eating_worms + pendelaars)
 
-mt_2 <- mt_2 %>% rowwise() %>% mutate(earthworms_2022 = sum(c_across(contains("Abundance"))))
-mt_2 <- mt_2 %>% rename("vb_code" = "code")
+mt_2 <- mt_2 %>% rowwise() %>% dplyr::mutate(earthworms_2022 = sum(dplyr::c_across(contains("Abundance"))))
+mt_2 <- mt_2 %>% dplyr::rename("vb_code" = "code")
 
 mt_2_lu_loc <- mt_2 %>% dplyr::select(vb_code, landuse, location)
 
@@ -134,9 +136,25 @@ tab %>%
 
 ```
 
-## Litter mass loss data - overall
+# Statistics
 
-``` {r plot, boxplot litter mass loss, fig.dim = c(10,8)}
+## Litter mass loss data - Litter species x mesh size x land use
+
+``` {r statistics litter mass loss, fig.dim = c(10,8)}
+
+# Descriptive statistics
+summarySE (lml_2, measurevar="litter_mass_loss_final", na.rm=TRUE)
+summarySE (lml_2, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
+
+# Levene's test for homogeneity of variances
+variances_lml_lu_loc <- leveneTest(litter_mass_loss_final ~ landuse * location, data = lml_2)
+variances_lml_lu_loc
+
+# variances_lml_lu <- leveneTest(litter_mass_loss_final ~ landuse, data = lml_2)
+# variances_lml_lu
+
+# Histogram of the raw data
+gghistogram(lml_2, x='litter_mass_loss_final', fill = 'lightgrey', na.rm=TRUE)
 
 # Three-way ANOVA
 threeway.lmeFit <- lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse/vb_code),data=lml_2, 
@@ -147,11 +165,9 @@ threeway_cld <- cld(lsmeans(threeway.lmeFit,~ landuse * litter_sp * mesh_size,ad
 
 # Testing the residuals
 ggqqplot(residuals(threeway.lmeFit))
-shapiro.test(residuals(threeway.lmeFit)) # not significant (so normal)
-hist(residuals(threeway.lmeFit)) # kind of looks like a normal distribution
+shapiro.test(residuals(threeway.lmeFit)) # it is significant...
 
 # Plot the outcomes
-
 image <- lml_2 %>% group_by(mesh_size, litter_sp) %>%
   ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
   geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
@@ -169,9 +185,9 @@ ggsave(file="3x3plot.svg", plot=image, width=10, height=10)
 
 ``` 
 
-## Litter mass loss data - per litter species
+## Litter mass loss data - Litter species x mesh size
 
-```{r}
+```{r statistics litterxmesh}
 
 # Two-way ANOVAs (for significance letters)
 ## Litter species x Mesh size
@@ -183,36 +199,94 @@ cld(lsmeans(litter_mesh.lmeFit,~ litter_sp * mesh_size, adjust="tukey"), Letters
 # Testing the residuals
 ggqqplot(residuals(litter_mesh.lmeFit))
 shapiro.test(residuals(litter_mesh.lmeFit))
-hist(residuals(litter_mesh.lmeFit))
+```
 
+## Litter mass loss data - Alder (Mesh size x Land use)
+
+```{r statistics alder}
+# Two-way ANOVAs (for significance letters)
 # Testing for each litter species individually. A lot of copy pasta spaghetti code, hope to make this more 
 # streamlined still
 
-lml_2_litter.lmeFit <- lmer(litter_mass_loss_final ~ mesh_size * landuse + (1|location/landuse/vb_code),data=lml_2_litter, 
-                      na.action = "na.omit")
-anova(lml_2_litter.lmeFit)
+#lml_2_litter.lmeFit <- lmer(litter_mass_loss_final ~ mesh_size * landuse + #(1|location/landuse/vb_code),data=lml_2_litter, 
+ #                     na.action = "na.omit")
+#anova(lml_2_litter.lmeFit)
 
 lml_2_alder <- lml_2 %>%
   dplyr::filter(litter_sp == "Alder")
-lml_2_hazel <- lml_2 %>%
-  dplyr::filter(litter_sp == "Hazel")
-lml_2_chestnut <- lml_2 %>%
-  dplyr::filter(litter_sp == "Chestnut")
-
-## Alder: Mesh size x Landuse
 alder.lmeFit <- lmer(litter_mass_loss_final ~ mesh_size * landuse + (1|location/landuse/vb_code),data=lml_2_alder, 
                       na.action = "na.omit")
 anova(alder.lmeFit)
 cld(lsmeans(alder.lmeFit,~ mesh_size * landuse, adjust="tukey"), Letters = c(letters))
-## Hazel: Mesh size x Landuse
+
+# Descriptive statistics
+summarySE (lml_2_alder, measurevar="litter_mass_loss_final", na.rm=TRUE)
+summarySE (lml_2_alder, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
+
+# Levene's test for homogeneity of variances
+variances_lml_lu_loc <- leveneTest(litter_mass_loss_final ~ landuse * location, data = lml_2_alder)
+variances_lml_lu_loc
+
+# Histogram of the raw data
+gghistogram(lml_2_alder, x='litter_mass_loss_final', fill = 'lightgrey', na.rm=TRUE)
+
+# Residuals
+ggqqplot(residuals(alder.lmeFit))
+shapiro.test(residuals(alder.lmeFit))
+```
+
+## Litter mass loss data - Hazel (Mesh size x Land use)
+
+```{r statistics hazel}
+
+lml_2_hazel <- lml_2 %>%
+  dplyr::filter(litter_sp == "Hazel")
 hazel.lmeFit <- lmer(litter_mass_loss_final ~ mesh_size * landuse + (1|location/landuse/vb_code),data=lml_2_hazel, 
                       na.action = "na.omit")
 anova(hazel.lmeFit)
 cld(lsmeans(hazel.lmeFit,~ mesh_size * landuse, adjust="tukey"), Letters = c(letters))
-## Chestnut: Mesh size x Landuse
+
+# Descriptive statistics
+summarySE (lml_2_hazel, measurevar="litter_mass_loss_final", na.rm=TRUE)
+summarySE (lml_2_hazel, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
+
+# Levene's test for homogeneity of variances
+variances_lml_lu_loc <- leveneTest(litter_mass_loss_final ~ landuse * location, data = lml_2_hazel)
+variances_lml_lu_loc
+
+# Histogram of the raw data
+gghistogram(lml_2_hazel, x='litter_mass_loss_final', fill = 'lightgrey', na.rm=TRUE)
+
+# Residuals
+ggqqplot(residuals(hazel.lmeFit))
+shapiro.test(residuals(hazel.lmeFit))
+
+```
+
+## Litter mass loss data - Chestnut (Mesh size x Land use)
+
+```{r statistics chestnut}
+
+lml_2_chestnut <- lml_2 %>%
+  dplyr::filter(litter_sp == "Chestnut")
 chestnut.lmeFit <- lmer(litter_mass_loss_final ~ mesh_size * landuse + (1|location/landuse/vb_code),data=lml_2_chestnut, na.action = "na.omit")
 anova(chestnut.lmeFit)
 cld(lsmeans(chestnut.lmeFit,~ mesh_size * landuse, adjust="tukey"), Letters = c(letters))
+
+# Descriptive statistics
+summarySE (lml_2_chestnut, measurevar="litter_mass_loss_final", na.rm=TRUE)
+summarySE (lml_2_chestnut, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
+
+# Levene's test for homogeneity of variances
+variances_lml_lu_loc <- leveneTest(litter_mass_loss_final ~ landuse * location, data = lml_2_chestnut)
+variances_lml_lu_loc
+
+# Histogram of the raw data
+gghistogram(lml_2_chestnut, x='litter_mass_loss_final', fill = 'lightgrey', na.rm=TRUE)
+
+# Residuals
+ggqqplot(residuals(chestnut.lmeFit))
+shapiro.test(residuals(chestnut.lmeFit))
 
 ```
 
