@@ -12,6 +12,10 @@ library(tidyverse)
 library(ggpubr)
 library(car)
 library(gridExtra)
+library(flextable)
+library(lme4)
+library(multcomp)
+library(emmeans)
 
 ```
 
@@ -42,6 +46,7 @@ mt_4 <- cbind(mt_3, mites_sum = rowSums(mt_3[c('Mites_oribatid_kg','Mites_other_
 mt_4 <- cbind(mt_4, biomass_ew_total = rowSums(mt_3[c('Biomass_anecic','Biomass_endogeic','Biomass_epigeic','Biomass_juvenile')]))
 
 ```
+## normality and variances
 
 ``` {R data check, fig.dim=c(12, 18)}
 # variables
@@ -56,13 +61,54 @@ vars <- mt_4 %>%
 
 # normality and equal variances
 
-normality <- map(vars, ~ggdensity(mt_4, .x,  fill = 'lightgrey', na.rm=TRUE))
+normality <- map(vars, ~gghistogram(mt_4, .x,  fill = 'lightgrey', na.rm=TRUE))
 plots_list <- map(normality, ~.x)
-grid.arrange(grobs = plots_list, ncol = 2, nrow = 10)
+# grid.arrange(grobs = plots_list, ncol = 2, nrow = 10)
 
 variances_loc_lu <- map(vars, ~leveneTest(mt_4[[.x]] ~ landuse * location, data = mt_4))
-variances_loc_lu
 
 variances_lu <- map(vars, ~leveneTest(mt_4[[.x]] ~ landuse, data = mt_4))
-variances_lu
+
+# tab_var <- mt_4 %>% group_by(landuse, location) %>% 
+#   dplyr::select(ph_kcl, som_percentage, b.d.,                                                
+#                 moisture_percentage, 
+#                 NO2_NO3_mg_kg, NH4_mg_kg, Total_P_mg_kg, Olsen_P_mg_kg, earthworms_2022, 
+#                 biomass_ew_total, Springtails_nr_kg, Mites_oribatid_kg, Mites_other_kg, 
+#                 nr_nematodes_gr_dry,Bacteria_total, Microbial, Actinobacteria_total, 
+#                 Fungi_total, Total_plfa, AMF_NLFA) %>% 
+#           summarize_all(var, na.rm=TRUE) %>% mutate(across(where(is.numeric), round, 1))
+# 
+# tab_var %>% pivot_longer(cols=c(ph_kcl:AMF_NLFA)) %>% 
+#                   pivot_wider(names_from = c(landuse,location),values_from = value) %>%
+#             flextable()  %>%
+#             set_table_properties(layout = "autofit")
+
+
 ``` 
+
+``` {r nested ANOVA all variables}
+# list of model outputs ANOVA
+models <- list()
+for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_kg','NH4_mg_kg',
+            'Total_P_mg_kg','Olsen_P_mg_kg','earthworms_2022','biomass_ew_total',
+            'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg','nr_nematodes_gr_dry',
+            'Bacteria_total','Microbial','Actinobacteria_total','Fungi_total','Total_plfa','AMF_NLFA')) {
+  f <- formula(paste(i,"~ landuse + (1|location)"))
+  models[[i]] <- lmer(f, data=mt_4, na.action = "na.omit")
+}
+``` 
+
+### pH
+
+``` {R data check pH}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(ph_kcl),sd=sd(ph_kcl),var=var(ph_kcl))
+variances_loc_lu$ph_kcl
+# par(mfrow=c(1,2))
+normality$ph_kcl
+# mt_4 %>% group_by(landuse) %>% ggplot(x=landuse, y=ph_kcl, color=landuse) + geom_boxplot()
+plot(fitted(models$ph_kcl, res))
+qqPlot(residuals(models$ph_kcl))
+# ggarrange(n,b,r,q, ncol = 2, nrow = 2)
+cld(lsmeans(models$ph_kcl,~ landuse, adjust="tukey"), Letters = c(letters))
+shapiro.test(residuals(models$ph_kcl))
+```
