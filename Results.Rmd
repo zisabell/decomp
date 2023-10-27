@@ -25,6 +25,9 @@ library(multcomp)
 library(multcompView)
 library(emmeans)
 library(broom)
+library(broom.mixed)
+library(ggcorrplot)
+library(reshape2)
 
 ```
 
@@ -71,24 +74,13 @@ Average AMF biomass in grassland was `r format(mt_4 %>% filter(landuse == "Grass
 #   padding.top = 3, padding.bottom = 3,
 #   padding.left = 4, padding.right = 4)
 
-# function to run ANOVA test on all parameters (NEEDS TO BE ADJUSTED, GIVES ERRORS STILL)
-# table_anova <- function(lme_data, v1, v2, v3) {
-#   lme_data.lmeFit <- lmer(lme_data[c(v1)] ~ lme_data[c(v2)] + (1|lme_data[c(v3)]),data=lme_data,
-#                       na.action = "na.omit")
-#   anova(lme_data.lmeFit)
+# # run ANOVA for ph_kcl as a test
+# mt_4.lmeFit <- lmer(ph_kcl ~ landuse + (1|location),data=mt_4, na.action = "na.omit")
+# anova(mt_4.lmeFit)
 # 
-#   cld(lsmeans(lme_data.lmeFit,~ v2,adjust="tukey"), Letters = c(letters))
-# }
-# 
-# table_anova(mt_4, ph_kcl, landuse, location)
+# cld(lsmeans(mt_4.lmeFit,~ landuse,adjust="tukey"), Letters = c(letters))
 
-# run ANOVA for ph_kcl as a test
-mt_4.lmeFit <- lmer(ph_kcl ~ landuse + (1|location),data=mt_4, na.action = "na.omit")
-anova(mt_4.lmeFit)
-
-cld(lsmeans(mt_4.lmeFit,~ landuse,adjust="tukey"), Letters = c(letters))
-
-# DIT WERKT, maar is nog niet optimaal qua output
+# list of model outputs ANOVA
 models <- list()
 for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_kg','NH4_mg_kg',
             'Total_P_mg_kg','Olsen_P_mg_kg','earthworms_2022','biomass_ew_total',
@@ -98,9 +90,7 @@ for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_k
   models[[i]] <- lmer(f, data=mt_4, na.action = "na.omit")
 }
 
-anova(models$ph_kcl)
-x<-cld(lsmeans(models$ph_kcl,~ landuse, adjust="tukey"), Letters = c(letters))
-x$.group
+cld(lsmeans(models$AMF_NLFA,~ landuse, adjust="tukey"), Letters = c(letters))
 
 tab_order <- c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_kg','NH4_mg_kg','Total_P_mg_kg',
                'Olsen_P_mg_kg','earthworms_2022','biomass_ew_total','Springtails_nr_kg','Mites_oribatid_kg',
@@ -359,3 +349,30 @@ cld(lsmeans(mt_2.lmeFit,~ location,adjust="tukey"), Letters = c(letters))
 
 
 ```
+
+
+## Correlation matrix variables  
+
+```{r correlation matrix, fig.dim=c(12,12)}
+corr <- round(cor(mt_4 %>% dplyr::select(c('ph_kcl','som_percentage','b.d.','moisture_percentage',
+                                           'NO2_NO3_mg_kg','NH4_mg_kg',
+            'Total_P_mg_kg','Olsen_P_mg_kg','earthworms_2022','biomass_ew_total',
+            'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg','nr_nematodes_gr_dry',
+            'Bacteria_total','Microbial','Actinobacteria_total','Fungi_total','Total_plfa','AMF_NLFA')),
+            use='pairwise.complete.obs'), 1)
+
+# automatic ggcorrplot
+# ggcorrplot(corr, method = "circle")
+
+# more adjustable ggplot version
+ggplot(melt(corr), aes(Var1, Var2, fill=value)) +
+  geom_tile(height=0.8, width=0.8) +
+  scale_fill_gradient2(low="blue", mid="white", high="red") +
+  theme_minimal() +
+  coord_equal() +
+  labs(x="",y="",fill="Corr") +
+  theme(axis.text.x=element_text(size=18, angle=45, vjust=1, hjust=1, 
+                                 margin=margin(-3,0,0,0)),
+        axis.text.y=element_text(size=18, margin=margin(0,-3,0,0)),
+        panel.grid.major=element_blank()) 
+``` 
