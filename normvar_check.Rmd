@@ -12,6 +12,7 @@ library(tidyverse)
 library(ggpubr)
 library(car)
 library(gridExtra)
+library(lme4)
 
 ```
 
@@ -65,4 +66,5 @@ variances_loc_lu
 
 variances_lu <- map(vars, ~leveneTest(mt_4[[.x]] ~ landuse, data = mt_4))
 variances_lu
-``` 
+
+```
