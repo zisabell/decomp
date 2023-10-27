@@ -146,6 +146,13 @@ threeway_cld <- cld(lsmeans(threeway.lmeFit,~ landuse * litter_sp * mesh_size,ad
 
 # Three-way interaction letters are there but it looks kind of messy
 
+# Testing the residuals
+ggqqplot(residuals(threeway.lmeFit))
+shapiro.test(residuals(threeway.lmeFit)) # not significant
+hist(residuals(threeway.lmeFit)) # kind of looks like a normal distribution
+
+# Plot the outcomes
+
 lml_2 %>% group_by(mesh_size, litter_sp) %>%
   ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
   geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
