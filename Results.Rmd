@@ -149,6 +149,11 @@ gghistogram(lml_2, x='litter_mass_loss_final', fill = 'lightgrey', na.rm=TRUE)
 # Three-way ANOVA
 threeway.lmeFit <- lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse/vb_code),data=lml_2, 
                       na.action = "na.omit")
+summary(threeway.lmeFit)
+augmented_threeway <- augment(threeway.lmeFit)
+ggplot(augmented_threeway, aes(x = .fitted, y = .resid)) + 
+  geom_point()
+outlierTest(threeway.lmeFit) # sample from line 115 is outlier?
 anova(threeway.lmeFit)
 # Three-way interaction letters are there but it looks kind of messy (probably better to do it manually again)
 threeway_cld <- cld(lsmeans(threeway.lmeFit,~ landuse * litter_sp * mesh_size,adjust="tukey"), Letters = c(letters))
@@ -183,6 +188,7 @@ ggsave(file="3x3plot.svg", plot=image, width=10, height=10)
 ## Litter species x Mesh size
 litter_mesh.lmeFit <- lmer(litter_mass_loss_final ~ litter_sp * mesh_size + (1|location/landuse/vb_code),data=lml_2,
                       na.action = "na.omit")
+summary(litter_mesh.lmeFit)
 anova(litter_mesh.lmeFit)
 cld(lsmeans(litter_mesh.lmeFit,~ litter_sp * mesh_size, adjust="tukey"), Letters = c(letters))
 
@@ -206,6 +212,7 @@ lml_2_alder <- lml_2 %>%
   dplyr::filter(litter_sp == "Alder")
 alder.lmeFit <- lmer(litter_mass_loss_final ~ mesh_size * landuse + (1|location/landuse/vb_code),data=lml_2_alder, 
                       na.action = "na.omit")
+summary(alder.lmeFit)
 anova(alder.lmeFit)
 cld(lsmeans(alder.lmeFit,~ mesh_size * landuse, adjust="tukey"), Letters = c(letters))
 
