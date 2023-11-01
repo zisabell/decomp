@@ -89,7 +89,7 @@ for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_k
   f <- formula(paste(i,"~ landuse + (1|location)"))
   models[[i]] <- lmer(f, data=mt_4, na.action = "na.omit")
 }
-
+  
 cld(lsmeans(models$AMF_NLFA,~ landuse, adjust="tukey"), Letters = c(letters))
 
 tab_order <- c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_kg','NH4_mg_kg','Total_P_mg_kg',
@@ -118,7 +118,7 @@ tab %>%
                        Springtails_nr_kg = "Springtails abundance", Mites_oribatid_kg = "Mites oribatid abundance",
                        Mites_other_kg = "Mites other abundance", nr_nematodes_gr_dry = "Nematodes",
                        Bacteria_total = "Bacteria, total", Microbial = "Microbial",
-                       Actinobacteria_total = "Actinobacteria, total", Fungi_total = "Fungi, total",
+                       Actinobacteria_total = "Actinobacteria, total", Fungi_total = "Fungi total",
                        Total_plfa = "PFLA, total", AMF_NLFA = "AMF NFLA")) %>%
   set_table_properties(layout = "autofit")
 
@@ -133,8 +133,8 @@ tab %>%
 ``` {r statistics litter mass loss, fig.dim = c(10,8)}
 
 # Descriptive statistics
-summarySE (lml_2, measurevar="litter_mass_loss_final", na.rm=TRUE)
-summarySE (lml_2, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
+summarySE(lml_2, measurevar="litter_mass_loss_final", na.rm=TRUE)
+summarySE(lml_2, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
 
 # Levene's test for homogeneity of variances
 variances_lml_lu_loc <- leveneTest(litter_mass_loss_final ~ landuse * location, data = lml_2)
@@ -149,9 +149,15 @@ gghistogram(lml_2, x='litter_mass_loss_final', fill = 'lightgrey', na.rm=TRUE)
 # Three-way ANOVA
 threeway.lmeFit <- lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse/vb_code),data=lml_2, 
                       na.action = "na.omit")
+summary(threeway.lmeFit)
+augmented_threeway <- augment(threeway.lmeFit)
+ggplot(augmented_threeway, aes(x = .fitted, y = .resid)) + 
+  geom_point()
+outlierTest(threeway.lmeFit) # sample from line 115 is outlier?
 anova(threeway.lmeFit)
 # Three-way interaction letters are there but it looks kind of messy (probably better to do it manually again)
 threeway_cld <- cld(lsmeans(threeway.lmeFit,~ landuse * litter_sp * mesh_size,adjust="tukey"), Letters = c(letters))
+threeway_cld
 
 # Testing the residuals
 ggqqplot(residuals(threeway.lmeFit))
@@ -164,14 +170,14 @@ image <- lml_2 %>% group_by(mesh_size, litter_sp) %>%
   scale_fill_manual(values=wes_palette("Royal1"), labels=c("Food forest","Grassland")) + 
   geom_point(position = position_jitterdodge(0.4), 
              pch=16, color="black",show.legend = FALSE) +
-  #geom_text(data = threeway_cld, aes(x = landuse, y = upper.CL, label = .group))
+  geom_text(data = threeway_cld, aes(x = landuse, y = upper.CL, label = .group)) +
   scale_fill_manual(values=c("#549E39","#ffa600")) +
-  facet_grid(mesh_size ~ litter_sp) +
+  facet_grid(litter_sp ~ mesh_size) +
   theme_bw(base_size = 16) +
   scale_x_discrete(labels=c("Food forest", "Grassland")) +
   labs(y="Litter mass loss (%)", x="Land use", fill="Landuse")
 
-ggsave(file="3x3plot.svg", plot=image, width=10, height=10)
+ggsave(file="3x3plot_flipped.svg", plot=image, width=10, height=10)
 
 ``` 
 
@@ -183,6 +189,7 @@ ggsave(file="3x3plot.svg", plot=image, width=10, height=10)
 ## Litter species x Mesh size
 litter_mesh.lmeFit <- lmer(litter_mass_loss_final ~ litter_sp * mesh_size + (1|location/landuse/vb_code),data=lml_2,
                       na.action = "na.omit")
+summary(litter_mesh.lmeFit)
 anova(litter_mesh.lmeFit)
 cld(lsmeans(litter_mesh.lmeFit,~ litter_sp * mesh_size, adjust="tukey"), Letters = c(letters))
 
@@ -206,6 +213,7 @@ lml_2_alder <- lml_2 %>%
   dplyr::filter(litter_sp == "Alder")
 alder.lmeFit <- lmer(litter_mass_loss_final ~ mesh_size * landuse + (1|location/landuse/vb_code),data=lml_2_alder, 
                       na.action = "na.omit")
+summary(alder.lmeFit)
 anova(alder.lmeFit)
 cld(lsmeans(alder.lmeFit,~ mesh_size * landuse, adjust="tukey"), Letters = c(letters))
 
@@ -364,15 +372,34 @@ corr <- round(cor(mt_4 %>% dplyr::select(c('ph_kcl','som_percentage','b.d.','moi
 # automatic ggcorrplot
 # ggcorrplot(corr, method = "circle")
 
+# Get lower triangle of the correlation matrix
+  get_lower_tri<-function(corr){
+    corr[upper.tri(corr)] <- NA
+    return(corr)
+  }
+  # Get upper triangle of the correlation matrix
+  get_upper_tri <- function(corr){
+    corr[lower.tri(corr)]<- NA
+    return(corr)
+  }
+
+lower_tri <- get_lower_tri(corr)
+
 # more adjustable ggplot version
-ggplot(melt(corr), aes(Var1, Var2, fill=value)) +
+ggplot(melt(lower_tri, na.rm=TRUE), aes(Var1, Var2, fill=value)) +
   geom_tile(height=0.8, width=0.8) +
-  scale_fill_gradient2(low="blue", mid="white", high="red") +
+  scale_fill_gradient2(low="blue", mid="white", high="red", limits=c(-1,1)) +
   theme_minimal() +
   coord_equal() +
   labs(x="",y="",fill="Corr") +
   theme(axis.text.x=element_text(size=18, angle=45, vjust=1, hjust=1, 
                                  margin=margin(-3,0,0,0)),
         axis.text.y=element_text(size=18, margin=margin(0,-3,0,0)),
-        panel.grid.major=element_blank()) 
+        panel.grid.major=element_blank(),
+        legend.justification = c(1, 0),
+        legend.position = c(0.6, 0.7),
+        legend.direction = "horizontal") +
+  geom_text(aes(Var1, Var2, label = value), color = "black", size = 4)
+
+
 ``` 
