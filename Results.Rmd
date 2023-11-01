@@ -89,7 +89,7 @@ for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_k
   f <- formula(paste(i,"~ landuse + (1|location)"))
   models[[i]] <- lmer(f, data=mt_4, na.action = "na.omit")
 }
-
+  
 cld(lsmeans(models$AMF_NLFA,~ landuse, adjust="tukey"), Letters = c(letters))
 
 tab_order <- c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_kg','NH4_mg_kg','Total_P_mg_kg',
