@@ -19,7 +19,8 @@ library(rstatix)
 library(readxl)
 library(writexl)
 library(car)
-library(lme4)
+# library(lme4) lmer from this package doesn't show p values
+library(lmerTest)
 library(wesanderson)
 library(multcomp)
 library(multcompView)
@@ -189,13 +190,11 @@ mt_2.lmeFit <- lmer(Bacteria_total ~ location + (1|location),data=mt_2, na.actio
 anova(mt_2.lmeFit)
 cld(lsmeans(mt_2.lmeFit,~ location,adjust="tukey"), Letters = c(letters))
 
-
 ```
 
-## Earthworm biomass functional groups
+## Earthworm biomass functional groups  
 
-
-``` {r plot, boxplot earthworm  biomass, fig.dim = c(10,8)}
+``` {r plot, boxplot earthworm biomass, fig.dim = c(10,8)}
 
 mt_4 %>% 
   group_by(landuse) %>%
@@ -212,8 +211,6 @@ mt_4 %>%
 
 ```
 
-
-
 # Statistics
 
 ## Litter mass loss data - Litter species x mesh size x land use
@@ -221,11 +218,16 @@ mt_4 %>%
 ``` {r statistics litter mass loss, fig.dim = c(10,8)}
 
 # Descriptive statistics
-summarySE(lml_2, measurevar="litter_mass_loss_final", na.rm=TRUE)
+# summarySE(lml_2, measurevar="litter_mass_loss_final", na.rm=TRUE)
 summarySE(lml_2, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
 
 # Levene's test for homogeneity of variances
-variances_lml_lu_loc <- leveneTest(litter_mass_loss_final ~ landuse * location, data = lml_2)
+lml_2 %>% group_by(landuse, location, litter_sp, mesh_size) %>%
+          summarize(mean=mean(litter_mass_loss_final, na.rm=TRUE),
+                    sd=sd(litter_mass_loss_final, na.rm=TRUE),
+                    var=var(litter_mass_loss_final, na.rm=TRUE))
+variances_lml_lu_loc <- leveneTest(litter_mass_loss_final ~ 
+                                     landuse * location * litter_sp * mesh_size, data = lml_2)
 variances_lml_lu_loc
 
 # variances_lml_lu <- leveneTest(litter_mass_loss_final ~ landuse, data = lml_2)

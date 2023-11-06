@@ -13,12 +13,12 @@ library(ggpubr)
 library(car)
 library(gridExtra)
 library(flextable)
-library(lme4)
+library(lmerTest)
+# library(lme4)
 library(multcomp)
 library(emmeans)
 library(broom.mixed)
 library(nlme)
-
 
 ```
 
@@ -46,7 +46,8 @@ lml_2 <- lml %>% left_join(mt_2_lu_loc, by ="vb_code")
 
 # sum columns mites and earthworms
 mt_4 <- cbind(mt_3, mites_sum = rowSums(mt_3[c('Mites_oribatid_kg','Mites_other_kg')]))
-mt_4 <- cbind(mt_4, biomass_ew_total = rowSums(mt_3[c('Biomass_anecic','Biomass_endogeic','Biomass_epigeic','Biomass_juvenile')]))
+mt_4 <- cbind(mt_4, biomass_ew_total = 
+                rowSums(mt_3[c('Biomass_anecic','Biomass_endogeic','Biomass_epigeic','Biomass_juvenile')]))
 
 ```
 ## normality and variances
@@ -95,7 +96,7 @@ for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_k
             'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg','nr_nematodes_gr_dry',
             'Bacteria_total','Microbial','Actinobacteria_total','Fungi_total','Total_plfa','AMF_NLFA')) {
   f <- formula(paste(i,"~ landuse + (1|location)"))
-  models[[i]] <- lmer(f, data=mt_4, na.action = "na.omit")
+  models[[i]] <- lmerTest::lmer(f, data=mt_4, na.action = "na.omit")
 }
 ``` 
 
@@ -103,9 +104,9 @@ for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_k
 
 ``` {R data check pH}
 mt_4 %>% group_by(landuse) %>% summarize(mean=mean(ph_kcl),sd=sd(ph_kcl),var=var(ph_kcl))
-variances_loc_lu$ph_kcl
+# variances_loc_lu$ph_kcl
 # par(mfrow=c(1,2))
-normality$ph_kcl
+# normality$ph_kcl
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=ph_kcl, color=landuse)) + geom_boxplot()
 plot(fitted(models$ph_kcl, res))
 qqPlot(residuals(models$ph_kcl))
