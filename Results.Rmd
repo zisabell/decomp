@@ -159,9 +159,21 @@ anova(threeway.lmeFit)
 threeway_cld <- cld(lsmeans(threeway.lmeFit,~ landuse * litter_sp * mesh_size,adjust="tukey"), Letters = c(letters))
 threeway_cld
 
+# Three-way ANOVA, different function that includes p-value in the output (but also different output compared to the other anova function)
+threeway_aov <- aov(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1:location/landuse/vb_code), data=lml_2, na.action = "na.omit")
+summary(threeway_aov)
+
 # Testing the residuals
 ggqqplot(residuals(threeway.lmeFit))
 shapiro.test(residuals(threeway.lmeFit)) # it is significant...
+
+# Arcsine transformation (does not seem to make any difference)
+lml_3 <- lml_2
+lml_3$litter_mass_loss_final <- asin(sqrt(lml_2$litter_mass_loss_final))
+threeway_3.lmeFit <- lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse),data=lml_3, 
+                      na.action = "na.omit")
+ggqqplot(residuals(threeway_3.lmeFit))
+shapiro.test(residuals(threeway_3.lmeFit))
 
 # Plot the outcomes
 image <- lml_2 %>% group_by(mesh_size, litter_sp) %>%
@@ -178,6 +190,7 @@ image <- lml_2 %>% group_by(mesh_size, litter_sp) %>%
   labs(y="Litter mass loss (%)", x="Land use", fill="Landuse")
 
 ggsave(file="3x3plot_flipped.svg", plot=image, width=10, height=10)
+
 
 ``` 
 
