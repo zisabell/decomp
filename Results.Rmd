@@ -52,12 +52,14 @@ mt_2_lu_loc <- mt_2 %>% dplyr::select(vb_code, landuse, location)
 mt_3 <- mt_2 %>% filter(plot_nr < 5)
 
 # join litter mass data with landuse & location data
-
 lml_2 <- lml %>% left_join(mt_2_lu_loc, by ="vb_code")
 
 # sum columns mites and earthworms
 mt_4 <- cbind(mt_3, mites_sum = rowSums(mt_3[c('Mites_oribatid_kg','Mites_other_kg')]))
 mt_4 <- cbind(mt_4, biomass_ew_total = rowSums(mt_3[c('Biomass_anecic','Biomass_endogeic','Biomass_epigeic','Biomass_juvenile')]))
+
+# join litter mass data with physical, chemical, biological data
+lml_mt <- lml_2 %>% left_join(mt_4, by ="vb_code")
 
 ```
 
