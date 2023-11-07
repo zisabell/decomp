@@ -28,6 +28,7 @@ library(broom)
 library(broom.mixed)
 library(ggcorrplot)
 library(reshape2)
+library(lmerTest)
 
 ```
 
@@ -128,7 +129,7 @@ tab %>%
 
 # Statistics
 
-## Litter mass loss data - Litter species x mesh size x land use
+## Litter mass loss data - Litter species x mesh size x land use (three way ANOVA)
 
 ``` {r statistics litter mass loss, fig.dim = c(10,8)}
 
@@ -137,17 +138,14 @@ summarySE(lml_2, measurevar="litter_mass_loss_final", na.rm=TRUE)
 summarySE(lml_2, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
 
 # Levene's test for homogeneity of variances
-variances_lml_lu_loc <- leveneTest(litter_mass_loss_final ~ landuse * location, data = lml_2)
-variances_lml_lu_loc
-
-# variances_lml_lu <- leveneTest(litter_mass_loss_final ~ landuse, data = lml_2)
-# variances_lml_lu
+variances_lml <- leveneTest(litter_mass_loss_final ~ landuse * location, data = lml_2)
+variances_lml
 
 # Histogram of the raw data
 gghistogram(lml_2, x='litter_mass_loss_final', fill = 'lightgrey', na.rm=TRUE)
 
 # Three-way ANOVA
-threeway.lmeFit <- lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse/vb_code),data=lml_2, 
+threeway.lmeFit <- lmerTest::lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse),data=lml_2, 
                       na.action = "na.omit")
 summary(threeway.lmeFit)
 augmented_threeway <- augment(threeway.lmeFit)
@@ -160,7 +158,7 @@ threeway_cld <- cld(lsmeans(threeway.lmeFit,~ landuse * litter_sp * mesh_size,ad
 threeway_cld
 
 # Three-way ANOVA, different function that includes p-value in the output (but also different output compared to the other anova function)
-threeway_aov <- aov(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1:location/landuse/vb_code), data=lml_2, na.action = "na.omit")
+threeway_aov <- aov(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1:location/landuse), data=lml_2, na.action = "na.omit")
 summary(threeway_aov)
 
 # Testing the residuals
@@ -193,114 +191,6 @@ ggsave(file="3x3plot_flipped.svg", plot=image, width=10, height=10)
 
 
 ``` 
-
-## Litter mass loss data - Litter species x mesh size
-
-```{r statistics litterxmesh}
-
-# Two-way ANOVAs (for significance letters)
-## Litter species x Mesh size
-litter_mesh.lmeFit <- lmer(litter_mass_loss_final ~ litter_sp * mesh_size + (1|location/landuse/vb_code),data=lml_2,
-                      na.action = "na.omit")
-summary(litter_mesh.lmeFit)
-anova(litter_mesh.lmeFit)
-cld(lsmeans(litter_mesh.lmeFit,~ litter_sp * mesh_size, adjust="tukey"), Letters = c(letters))
-
-# Testing the residuals
-ggqqplot(residuals(litter_mesh.lmeFit))
-shapiro.test(residuals(litter_mesh.lmeFit))
-```
-
-## Litter mass loss data - Alder (Mesh size x Land use)
-
-```{r statistics alder}
-# Two-way ANOVAs (for significance letters)
-# Testing for each litter species individually. A lot of copy pasta spaghetti code, hope to make this more 
-# streamlined still
-
-#lml_2_litter.lmeFit <- lmer(litter_mass_loss_final ~ mesh_size * landuse + #(1|location/landuse/vb_code),data=lml_2_litter, 
- #                     na.action = "na.omit")
-#anova(lml_2_litter.lmeFit)
-
-lml_2_alder <- lml_2 %>%
-  dplyr::filter(litter_sp == "Alder")
-alder.lmeFit <- lmer(litter_mass_loss_final ~ mesh_size * landuse + (1|location/landuse/vb_code),data=lml_2_alder, 
-                      na.action = "na.omit")
-summary(alder.lmeFit)
-anova(alder.lmeFit)
-cld(lsmeans(alder.lmeFit,~ mesh_size * landuse, adjust="tukey"), Letters = c(letters))
-
-# Descriptive statistics
-summarySE (lml_2_alder, measurevar="litter_mass_loss_final", na.rm=TRUE)
-summarySE (lml_2_alder, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
-
-# Levene's test for homogeneity of variances
-variances_lml_lu_loc <- leveneTest(litter_mass_loss_final ~ landuse * location, data = lml_2_alder)
-variances_lml_lu_loc
-
-# Histogram of the raw data
-gghistogram(lml_2_alder, x='litter_mass_loss_final', fill = 'lightgrey', na.rm=TRUE)
-
-# Residuals
-ggqqplot(residuals(alder.lmeFit))
-shapiro.test(residuals(alder.lmeFit))
-```
-
-## Litter mass loss data - Hazel (Mesh size x Land use)
-
-```{r statistics hazel}
-
-lml_2_hazel <- lml_2 %>%
-  dplyr::filter(litter_sp == "Hazel")
-hazel.lmeFit <- lmer(litter_mass_loss_final ~ mesh_size * landuse + (1|location/landuse/vb_code),data=lml_2_hazel, 
-                      na.action = "na.omit")
-anova(hazel.lmeFit)
-cld(lsmeans(hazel.lmeFit,~ mesh_size * landuse, adjust="tukey"), Letters = c(letters))
-
-# Descriptive statistics
-summarySE (lml_2_hazel, measurevar="litter_mass_loss_final", na.rm=TRUE)
-summarySE (lml_2_hazel, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
-
-# Levene's test for homogeneity of variances
-variances_lml_lu_loc <- leveneTest(litter_mass_loss_final ~ landuse * location, data = lml_2_hazel)
-variances_lml_lu_loc
-
-# Histogram of the raw data
-gghistogram(lml_2_hazel, x='litter_mass_loss_final', fill = 'lightgrey', na.rm=TRUE)
-
-# Residuals
-ggqqplot(residuals(hazel.lmeFit))
-shapiro.test(residuals(hazel.lmeFit))
-
-```
-
-## Litter mass loss data - Chestnut (Mesh size x Land use)
-
-```{r statistics chestnut}
-
-lml_2_chestnut <- lml_2 %>%
-  dplyr::filter(litter_sp == "Chestnut")
-chestnut.lmeFit <- lmer(litter_mass_loss_final ~ mesh_size * landuse + (1|location/landuse/vb_code),data=lml_2_chestnut, na.action = "na.omit")
-anova(chestnut.lmeFit)
-cld(lsmeans(chestnut.lmeFit,~ mesh_size * landuse, adjust="tukey"), Letters = c(letters))
-
-# Descriptive statistics
-summarySE (lml_2_chestnut, measurevar="litter_mass_loss_final", na.rm=TRUE)
-summarySE (lml_2_chestnut, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
-
-# Levene's test for homogeneity of variances
-variances_lml_lu_loc <- leveneTest(litter_mass_loss_final ~ landuse * location, data = lml_2_chestnut)
-variances_lml_lu_loc
-
-# Histogram of the raw data
-gghistogram(lml_2_chestnut, x='litter_mass_loss_final', fill = 'lightgrey', na.rm=TRUE)
-
-# Residuals
-ggqqplot(residuals(chestnut.lmeFit))
-shapiro.test(residuals(chestnut.lmeFit))
-
-```
-
 
 ## Earthworm biomass functional groups
 
