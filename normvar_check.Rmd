@@ -36,13 +36,11 @@ mt_2 <- mt %>% mutate(age = 2021-year_of_landuse,
 mt_2 <- mt_2 %>% rowwise() %>% mutate(earthworms_2022 = sum(c_across(contains("Abundance"))))
 mt_2 <- mt_2 %>% rename("vb_code" = "code")
 
+# join litter mass data with landuse & location data
 mt_2_lu_loc <- mt_2 %>% dplyr::select(vb_code, landuse, location)
+lml_2 <- lml %>% left_join(mt_2_lu_loc, by ="vb_code")
 
 mt_3 <- mt_2 %>% filter(plot_nr < 5)
-
-# join litter mass data with landuse & location data
-
-lml_2 <- lml %>% left_join(mt_2_lu_loc, by ="vb_code")
 
 # sum columns mites and earthworms
 mt_4 <- cbind(mt_3, mites_sum = rowSums(mt_3[c('Mites_oribatid_kg','Mites_other_kg')]))
@@ -102,15 +100,17 @@ for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_k
 
 ### pH
 
-``` {R data check pH}
-mt_4 %>% group_by(landuse) %>% summarize(mean=mean(ph_kcl),sd=sd(ph_kcl),var=var(ph_kcl))
+``` {R data check pH, fig.dim=c(3,5)}
+mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(ph_kcl),sd=sd(ph_kcl),var=var(ph_kcl))
 # variances_loc_lu$ph_kcl
-# par(mfrow=c(1,2))
 # normality$ph_kcl
-mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=ph_kcl, color=landuse)) + geom_boxplot()
-plot(fitted(models$ph_kcl, res))
+mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=ph_kcl, color=landuse)) + geom_boxplot() + theme(legend.position='none')
+# par(mfrow=c(1,2))
+# plot(fitted(models$ph_kcl, res))
 qqPlot(residuals(models$ph_kcl))
-cld(lsmeans(models$ph_kcl,~ landuse, adjust="tukey"), Letters = c(letters))
+cld(lsmeans(models$ph_kcl,~ landuse, adjust="sidak"), Letters = c(letters))
+# emm <- emmeans(models$ph_kcl, specs = pairwise ~ landuse)
+# emm$contrasts
 
 # transformed data pH <<<<< more not-normally distributed residuals!!
 # gghistogram(exp(-mt_4$ph_kcl),  fill = 'lightgrey', na.rm=TRUE, binwidth = 0.0003)
@@ -128,15 +128,15 @@ Equal variance, shapiro wilk shows non-normal distributed residuals (p=`r round(
 ### SOM
 
 ``` {R data check som}
-mt_4 %>% group_by(landuse) %>% summarize(mean=mean(som_percentage),sd=sd(som_percentage),var=var(som_percentage))
-variances_loc_lu$som_percentage
-# par(mfrow=c(1,2))
-normality$som_percentage
+mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(som_percentage),sd=sd(som_percentage),var=var(som_percentage))
+# variances_loc_lu$som_percentage
+# normality$som_percentage
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=som_percentage, color=landuse)) + geom_boxplot()
+par(mfrow=c(1,2))
 plot(fitted(models$som_percentage, res))
 qqPlot(residuals(models$som_percentage))
 cld(lsmeans(models$som_percentage,~ landuse, adjust="tukey"), Letters = c(letters))
-shapiro.test(residuals(models$som_percentage))
+# shapiro.test(residuals(models$som_percentage))
 ```
 
 **som conclusion:**  
