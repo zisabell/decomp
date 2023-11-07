@@ -450,6 +450,8 @@ mult_regr_alder <- lm(litter_mass_loss_final ~ ph_kcl + b.d. + NH4_mg_kg + Olsen
 
 summary(mult_regr_alder)
 
+stepAIC(mult_regr_alder, direction="both")
+
 #Hazel
 mr_hazel <- lml %>% filter(litter_sp == "Hazel" & mesh_size == "Coarse") %>%
                   left_join(mt_4, by = "vb_code")
@@ -458,6 +460,8 @@ mult_regr_hazel <- lm(litter_mass_loss_final ~ ph_kcl + b.d. + NH4_mg_kg + Olsen
 
 summary(mult_regr_hazel)
 
+stepAIC(mult_regr_hazel, direction="both")
+
 #Chestnut
 mr_chestnut <- lml %>% filter(litter_sp == "Chestnut" & mesh_size == "Coarse") %>%
                   left_join(mt_4, by = "vb_code")
@@ -465,6 +469,9 @@ mr_chestnut <- lml %>% filter(litter_sp == "Chestnut" & mesh_size == "Coarse") %
 mult_regr_chestnut <- lm(litter_mass_loss_final ~ ph_kcl + b.d. + NH4_mg_kg + Olsen_P_mg_kg + biomass_ew_total + Springtails_nr_kg + mites_sum + Total_plfa + AMF_NLFA, data = mr_chestnut)
 
 summary(mult_regr_chestnut)
+
+
+stepAIC(mult_regr_chestnut, direction="both")
 
 ``` 
 
