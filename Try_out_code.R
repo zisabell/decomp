@@ -28,3 +28,30 @@
 #   # unnest to access summary information of ANOVA
 #   unnest(cols = c(tidied_results))
 # # printing of results doesn't work...
+
+# Code for earthworm stacked bar
+
+``` {r plot, stacked bar earthworm functional groups, fig.dim = c(10,8)}
+
+mt_ew_long_b <- mt_2 %>% pivot_longer(cols=c(Biomass_anecic, Biomass_endogeic, Biomass_epigeic, Biomass_juvenile),
+                                      names_to="Groups",values_to="biomass")
+
+mt_ew_long_b$location <- factor(mt_ew_long_b$location, levels = c("Haarzuilens", "Vlaardingen","Boelenslaan", "Amsterdam"),
+                                labels = c("Location 1", "Location 2", "Location 3", "Location 4"))
+
+mt_ew_long_b %>% 
+  group_by(location, landuse, Groups) %>%
+  summarize(average = mean(biomass, na.rm=TRUE), .groups="drop") %>%
+  ggplot(aes(x=landuse, y=average, fill=Groups)) + 
+  geom_col(width=0.6) +
+  scale_fill_manual(values=wes_palette("Cavalcanti1"), labels=c("Anecic earthworms",
+                                                                "Endogeic earthworms",
+                                                                "Epigeic earthworms",
+                                                                "Juveniles")) +
+  facet_grid(~location) +
+  theme_bw(base_size = 18) +
+  theme(legend.position="bottom") +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(x="Landuse", y="Average earthworm biomass per plot (gr)",  fill="Microbial groups")
+
+```
