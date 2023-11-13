@@ -55,3 +55,59 @@ mt_ew_long_b %>%
   labs(x="Landuse", y="Average earthworm biomass per plot (gr)",  fill="Microbial groups")
 
 ```
+
+## PLFA/NLFA biomass microbial groups  
+
+
+``` {r plot, stacked bar microbial groups, fig.dim = c(10,8)}
+
+mt_plfa_long <- mt_2 %>% pivot_longer(cols=c(Bacteria_total, Actinobacteria_total, Fungi_total, AMF_NLFA),
+                                      names_to="Groups",values_to="concentration")
+
+# mt_plfa_long$location <- factor(mt_plfa_long$location, levels = c("Haarzuilens", "Vlaardingen","Boelenslaan", "Amsterdam"),
+#                   labels = c("Location 1", "Location 2", "Location 3", "Location 4"))
+
+mt_plfa_long %>% 
+  group_by(landuse, Groups) %>%
+  summarize(average = mean(concentration), .groups="drop") %>%
+  ggplot(aes(x=landuse, y=average, fill=Groups)) + 
+  geom_col(width=0.6) +
+  scale_fill_manual(values=wes_palette("Cavalcanti1"), labels=c("Actinobacteria",
+                                                                "AMF",
+                                                                "Bacteria",
+                                                                "Fungi")) +
+  theme_minimal(base_size = 18) +
+  theme(legend.position="top") +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(x="Landuse", y="Average estimation microbial biomass (ug/gr of soil)",  fill="Microbial groups")
+
+# Run ANOVAs to test for the effect of land use vs location -> need to make figures out of this
+# AMF_NLFA is the only one significant for land use
+mt_2.lmeFit <- lmer(AMF_NLFA ~ landuse + (1|location),data=mt_2, na.action = "na.omit")
+anova(mt_2.lmeFit)
+cld(lsmeans(mt_2.lmeFit,~ landuse,adjust="tukey"), Letters = c(letters))
+# Bacteria_total is the only one significant for location
+mt_2.lmeFit <- lmer(Bacteria_total ~ location + (1|location),data=mt_2, na.action = "na.omit")
+anova(mt_2.lmeFit)
+cld(lsmeans(mt_2.lmeFit,~ location,adjust="tukey"), Letters = c(letters))
+
+```
+
+## Earthworm biomass functional groups  
+
+``` {r plot, boxplot earthworm biomass, fig.dim = c(10,8)}
+
+mt_4 %>% 
+  group_by(landuse) %>%
+  ggplot(aes(x=landuse, y=earthworms_2022, fill=landuse)) + 
+  geom_boxplot(outlier.shape=NA, alpha=0.6) +
+  geom_jitter(width=0.2, shape = 16, fill = "black",
+              size = 3) + 
+  scale_fill_manual(values=c("#0072B2","#009E73")) +
+  theme_minimal(base_size = 18) +
+  theme(legend.position="none", panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(x="Landuse", y="Average earthworm biomass (gr/0.1m2)")
+
+```
