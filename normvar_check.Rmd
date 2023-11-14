@@ -40,12 +40,12 @@ mt_2 <- mt_2 %>% rename("vb_code" = "code")
 mt_2_lu_loc <- mt_2 %>% dplyr::select(vb_code, landuse, location)
 lml_2 <- lml %>% left_join(mt_2_lu_loc, by ="vb_code")
 
-mt_3 <- mt_2 %>% filter(plot_nr < 5)
+# mt_3 <- mt_2 %>% filter(plot_nr < 5)
 
 # sum columns mites and earthworms
-mt_4 <- cbind(mt_3, mites_sum = rowSums(mt_3[c('Mites_oribatid_kg','Mites_other_kg')]))
+mt_4 <- cbind(mt_2, mites_sum = rowSums(mt_2[c('Mites_oribatid_kg','Mites_other_kg')]))
 mt_4 <- cbind(mt_4, biomass_ew_total = 
-                rowSums(mt_3[c('Biomass_anecic','Biomass_endogeic','Biomass_epigeic','Biomass_juvenile')]))
+                rowSums(mt_2[c('Biomass_anecic','Biomass_endogeic','Biomass_epigeic','Biomass_juvenile')]))
 
 ```
 ## normality and variances
@@ -102,15 +102,14 @@ for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_k
 
 ``` {R data check pH, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(ph_kcl),sd=sd(ph_kcl),var=var(ph_kcl))
-# variances_loc_lu$ph_kcl
+variances_loc_lu$ph_kcl
 # normality$ph_kcl
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=ph_kcl, color=landuse)) + geom_boxplot() + theme(legend.position='none')
 # par(mfrow=c(1,2))
 # plot(fitted(models$ph_kcl, res))
 qqPlot(residuals(models$ph_kcl))
-# cld(lsmeans(models$ph_kcl,~ landuse, adjust="sidak"), Letters = c(letters))
-# emm <- emmeans(models$ph_kcl, specs = pairwise ~ landuse)
-# emm$contrasts
+shapiro.test(residuals(models$ph_kcl))
+anova(models$ph_kcl)
 
 # ranef(models$ph_kcl) # calls random effects estimates
 
@@ -163,7 +162,8 @@ mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=b.d., color=landuse)) + g
 # plot(fitted(models$b.d., res))
 qqPlot(residuals(models$b.d.))
 # cld(lsmeans(models$b.d.,~ landuse, adjust="tukey"), Letters = c(letters))
-# shapiro.test(residuals(models$b.d.))
+shapiro.test(residuals(models$b.d.))
+anova(models$b.d.)
 ```
 
 **bulk density conclusion:**  
@@ -186,9 +186,8 @@ mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=moisture_percentage,
           theme(legend.position='none')
 # plot(fitted(models$moisture_percentage, res))
 qqPlot(residuals(models$moisture_percentage))
-# cld(lsmeans(models$moisture_percentage,~ landuse, adjust="tukey"), 
-# Letters = c(letters))
 # shapiro.test(residuals(models$moisture_percentage))
+anova(models$moisture_percentage)
 ```
 
 **moisture percentage conclusion:**  
@@ -202,18 +201,17 @@ Equal variances, normal residuals from shapiro-wilk, QQ-plot looks good. Conclus
 ``` {R data check NO2_NO3_mg_kg, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% 
   summarize(mean=mean(NO2_NO3_mg_kg),sd=sd(NO2_NO3_mg_kg),var=var(NO2_NO3_mg_kg))
-# variances_loc_lu$NO2_NO3_mg_kg
+variances_loc_lu$NO2_NO3_mg_kg
 # par(mfrow=c(1,2))
 # normality$NO2_NO3_mg_kg
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=NO2_NO3_mg_kg, color=landuse)) + 
     geom_boxplot() + theme(legend.position='none')
 # plot(fitted(models$NO2_NO3_mg_kg, res))
 qqPlot(residuals(models$NO2_NO3_mg_kg))
-# cld(lsmeans(models$NO2_NO3_mg_kg,~ landuse, adjust="tukey"), Letters = c(letters))
 # shapiro.test(residuals(models$NO2_NO3_mg_kg))
 
 # Log transformation
-var_log_N <- leveneTest(log(NO2_NO3_mg_kg) ~ landuse * location, data=mt_4)
+var_log_N <- leveneTest(log(NO2_NO3_mg_kg) ~ landuse * location, data=mt_4) #UNEQUAL VARIANCES FIXED!
 mod_log_N <- lmer(log(NO2_NO3_mg_kg+0.001) ~ landuse + (1|location), data=mt_4,
                   na.action = "na.omit")
 qqPlot(residuals(mod_log_N))
@@ -238,8 +236,7 @@ mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(NH4_mg_kg),sd=sd(NH
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=NH4_mg_kg, color=landuse)) + geom_boxplot() + theme(legend.position='none')
 # plot(fitted(models$NH4_mg_kg, res))
 qqPlot(residuals(models$NH4_mg_kg))
-# cld(lsmeans(models$NH4_mg_kg,~ landuse, adjust="tukey"), Letters = c(letters))
-# shapiro.test(residuals(models$NH4_mg_kg))
+shapiro.test(residuals(models$NH4_mg_kg))
 ```
 
 **NH4 conclusion:**  
@@ -252,20 +249,21 @@ Equal variances, normal residuals shapiro-wilk, QQ-plot looks good. Conclusion: 
 
 ``` {R data check Total_P_mg_kg, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Total_P_mg_kg),sd=sd(Total_P_mg_kg),var=var(Total_P_mg_kg))
-# variances_loc_lu$Total_P_mg_kg
+variances_loc_lu$Total_P_mg_kg
 # par(mfrow=c(1,2))
 # normality$Total_P_mg_kg
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Total_P_mg_kg, color=landuse)) + geom_boxplot() + theme(legend.position='none')
 # plot(fitted(models$Total_P_mg_kg, res))
 qqPlot(residuals(models$Total_P_mg_kg))
 # cld(lsmeans(models$Total_P_mg_kg,~ landuse, adjust="tukey"), Letters = c(letters))
-# shapiro.test(residuals(models$Total_P_mg_kg))
+shapiro.test(residuals(models$Total_P_mg_kg))
 
-# Log transformation
+# Log transformation FIXED!!
 var_log_P <- leveneTest(log(Total_P_mg_kg) ~ landuse * location, data=mt_4)
 mod_log_P <- lmer(log(Total_P_mg_kg+0.001) ~ landuse + (1|location), data=mt_4,
                   na.action = "na.omit")
 qqPlot(residuals(mod_log_P))
+shapiro.test(residuals(mod_log_P))
 ```
 
 **Total P conclusion**  
@@ -297,7 +295,7 @@ Equal variances, normal residuals shapiro-wilk, QQ-plot looks good! Conclusion: 
 
 ``` {R data check earthworms_2022, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(earthworms_2022, na.rm=TRUE),sd=sd(earthworms_2022, na.rm=TRUE),var=var(earthworms_2022, na.rm=TRUE))
-# variances_loc_lu$earthworms_2022
+variances_loc_lu$earthworms_2022
 # par(mfrow=c(1,2))
 # normality$earthworms_2022
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=earthworms_2022, color=landuse)) + geom_boxplot() + theme(legend.position='none')
@@ -322,7 +320,7 @@ gls()?
 
 ``` {R data check biomass_ew_total, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(biomass_ew_total, na.rm=TRUE),sd=sd(biomass_ew_total, na.rm=TRUE),var=var(biomass_ew_total, na.rm=TRUE))
-# variances_loc_lu$biomass_ew_total
+variances_loc_lu$biomass_ew_total
 # par(mfrow=c(1,2))
 # normality$biomass_ew_total
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=biomass_ew_total, color=landuse)) + geom_boxplot() + theme(legend.position='none')
@@ -382,7 +380,7 @@ Non-equal variances (p=`r variances_loc_lu$Springtails_nr_kg$"Pr(>F)"[1]`), norm
 
 ``` {R data check Mites_oribatid_kg, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Mites_oribatid_kg, na.rm=TRUE),sd=sd(Mites_oribatid_kg, na.rm=TRUE),var=var(Mites_oribatid_kg, na.rm=TRUE))
-variances_loc_lu$Mites_oribatid_kg
+# variances_loc_lu$Mites_oribatid_kg
 # par(mfrow=c(1,2))
 # normality$Mites_oribatid_kg
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Mites_oribatid_kg, color=landuse)) + geom_boxplot()  + theme(legend.position='none')
@@ -405,7 +403,7 @@ Non-equal variances (p=`r variances_loc_lu$Mites_oribatid_kg$"Pr(>F)"[1]`), non-
 
 ``` {R data check Mites_other_kg, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Mites_other_kg, na.rm=TRUE),sd=sd(Mites_other_kg, na.rm=TRUE),var=var(Mites_other_kg, na.rm=TRUE))
-# variances_loc_lu$Mites_other_kg
+variances_loc_lu$Mites_other_kg
 # par(mfrow=c(1,2))
 # normality$Mites_other_kg
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Mites_other_kg, color=landuse)) + geom_boxplot() + theme(legend.position='none')
@@ -467,7 +465,7 @@ Equal variances, normal residuals with shapiro. QQ-plot looks good. Conclusion: 
 
 ``` {R data check Actinobacteria_total, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Actinobacteria_total),sd=sd(Actinobacteria_total),var=var(Actinobacteria_total))
-# variances_loc_lu$Actinobacteria_total
+variances_loc_lu$Actinobacteria_total
 # par(mfrow=c(1,2))
 # normality$Actinobacteria_total
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Actinobacteria_total, color=landuse)) + geom_boxplot() + theme(legend.position='none')
@@ -486,13 +484,13 @@ Equal variances, normal residuals with shapiro. QQ-plot looks good. Conclusion: 
 
 ``` {R data check Fungi_total, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Fungi_total),sd=sd(Fungi_total),var=var(Fungi_total))
-# variances_loc_lu$Fungi_total
+variances_loc_lu$Fungi_total
 # par(mfrow=c(1,2))
 # normality$Fungi_total
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Fungi_total, color=landuse)) + geom_boxplot() + theme(legend.position='none')
 # plot(fitted(models$Fungi_total, res))
 qqPlot(residuals(models$Fungi_total))
-# shapiro.test(residuals(models$Fungi_total))
+shapiro.test(residuals(models$Fungi_total))
 ```
 
 **Total fungi conclusion:**  
@@ -505,13 +503,13 @@ Equal variances, normal residuals with shapiro. QQ-plot looks good. Conclusion: 
 
 ``` {R data check Total_plfa, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Total_plfa),sd=sd(Total_plfa),var=var(Total_plfa))
-# variances_loc_lu$Total_plfa
+variances_loc_lu$Total_plfa
 # par(mfrow=c(1,2))
 # normality$Total_plfa
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Total_plfa, color=landuse)) + geom_boxplot() + theme(legend.position='none')
 # plot(fitted(models$Total_plfa, res))
 qqPlot(residuals(models$Total_plfa))
-# shapiro.test(residuals(models$Total_plfa))
+shapiro.test(residuals(models$Total_plfa))
 ```
 
 **Total PLFA conclusion:**  
@@ -524,13 +522,13 @@ Equal variances, normal residuals with shapiro. QQ-plot looks good. Conclusion: 
 
 ``` {R data check AMF_NLFA, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse) %>% summarize(mean=mean(AMF_NLFA),sd=sd(AMF_NLFA),var=var(AMF_NLFA))
-# variances_loc_lu$AMF_NLFA
+variances_loc_lu$AMF_NLFA
 # par(mfrow=c(1,2))
 # normality$AMF_NLFA
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=AMF_NLFA, color=landuse)) + geom_boxplot() + theme(legend.position='none')
 # plot(fitted(models$AMF_NLFA, res))
 qqPlot(residuals(models$AMF_NLFA))
-# shapiro.test(residuals(models$AMF_NLFA))
+shapiro.test(residuals(models$AMF_NLFA))
 
 # log transform AMF
 # gghistogram(log(mt_4$AMF_NLFA),  fill = 'lightgrey', na.rm=TRUE)
