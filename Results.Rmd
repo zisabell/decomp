@@ -165,7 +165,7 @@ tab %>%
 ``` {r statistics litter mass loss, fig.dim = c(10,8)}
 
 # Descriptive statistics
-# summarySE(lml_2, measurevar="litter_mass_loss_final", na.rm=TRUE)
+# summarySE(lml_2, measurevar="litter_mass_loss_final", na.rm=TRUE) # for overall summary
 summarySE(lml_2, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
 
 # Levene's test for homogeneity of variances
@@ -181,21 +181,29 @@ variances_lml
 gghistogram(lml_2, x='litter_mass_loss_final', fill = 'lightgrey', na.rm=TRUE)
 
 # Three-way ANOVA
-threeway.lmeFit <- lmerTest::lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse),data=lml_2, 
-                      na.action = "na.omit")
+threeway.lmeFit <- lmerTest::lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse),data=lml_2, na.action = "na.omit")
 summary(threeway.lmeFit)
 augmented_threeway <- augment(threeway.lmeFit)
 ggplot(augmented_threeway, aes(x = .fitted, y = .resid)) + 
   geom_point()
 outlierTest(threeway.lmeFit) # sample from line 115 is outlier?
-anova(threeway.lmeFit)
+threeway_anova <- anova(threeway.lmeFit)
+
+# ANOVA results in table (still need to manually replace the significant and very small P-values by <0.0001)
+litter_tab <- threeway_anova[,3:6]
+litter_tab <- cbind(rownames(litter_tab), data.frame(litter_tab, row.names=NULL))
+colnames(litter_tab)[1] <- "Parameter"
+
+table_test <- litter_tab %>%
+  flextable %>%
+    labelizor(labels = c(landuse = "Land use", litter_sp = "Litter species", mesh_size = "Mesh size", 'landuse:litter_sp' = "Land use x Litter species", 'landuse:mesh_size' = "Land use x Mesh size", 'litter_sp:mesh_size' = "Litter species x Mesh size", 'landuse:litter_sp:mesh_size' = "Land use x Litter species x Mesh size", NumDF = "Num. DF", DenDF = "Den. DF", F.value = "F-value", Pr..F. = "P-value")) %>%
+      colformat_double(j = c("DenDF"), digits = 0) %>%
+        colformat_double(j = c("F.value", "Pr..F."), digits = 3) %>%
+          set_table_properties(layout = "autofit")
+
 # Three-way interaction letters are there but it looks kind of messy (probably better to do it manually again)
 threeway_cld <- cld(lsmeans(threeway.lmeFit,~ landuse * litter_sp * mesh_size,adjust="tukey"), Letters = c(letters))
 threeway_cld
-
-# Three-way ANOVA, different function that includes p-value in the output (but also different output compared to the other anova function)
-threeway_aov <- aov(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1:location/landuse), data=lml_2, na.action = "na.omit")
-summary(threeway_aov)
 
 # Testing the residuals
 ggqqplot(residuals(threeway.lmeFit))
