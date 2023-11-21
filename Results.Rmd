@@ -411,9 +411,12 @@ mr_alder_pca_done <- mr_alder_pca_nomiss %>% dplyr::select(!c(landuse,location,l
 pca_3 <- prcomp(mr_alder_pca_done, scale=TRUE)
 fviz_eig(pca_3)
 
-fviz_pca_ind(pca_3, label="none", habillage=mr_alder_pca_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4)
+fviz_pca_ind(pca_3, label="none", habillage=mr_alder_pca_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) 
 
-fviz_pca_biplot(pca_3, label="var", habillage=mr_alder_pca_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4)
+fviz_pca_biplot(pca_3, label="var", habillage=mr_alder_pca_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom", ,text = element_text(size = 17))
+
+ggsave("pca_smallest.png", width=8, height=8)
+
 
 #PCA with litter mass loss coarse mesh size alder WITHOUT earthworms and micro-arthropods NOT SURE IF CORRECT?
 mr_alder_pca_wo <- mr_alder %>% dplyr::select(c(landuse,location,loc_lu, litter_mass_loss_final, ph_kcl,moisture_percentage,som_percentage, b.d., NO2_NO3_mg_kg,
@@ -432,5 +435,7 @@ fviz_eig(pca_4)
 fviz_pca_ind(pca_4, label="none", habillage=mr_alder_pca_wo_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom",text = element_text(size = 17))
 
 fviz_pca_biplot(pca_4, label="var", habillage=mr_alder_pca_wo_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom",text = element_text(size = 17))
+
+ggsave("pca_lml.png", width=8, height=8)
 
 ``` 
