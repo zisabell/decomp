@@ -317,13 +317,15 @@ fviz_eig(pca) #check scree plot
 fviz_pca_ind(pca,
              col.ind = "cos2", # Color by the quality of representation
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE     # Avoid text overlapping
+             repel = TRUE,     # Avoid text overlapping
+             mean.point = FALSE # Remove mean point
              )
 
 fviz_pca_ind(pca, label="none", habillage=mt_4_pca_nomiss$location,
-             addEllipses=TRUE, ellipse.level=0.95)
+             addEllipses=TRUE, ellipse.level=0.95, mean.point = FALSE)
 
-fviz_pca_biplot(pca, label="var", habillage=mt_4_pca_nomiss$loc_lu, palette = "Paired", pointshape=16)  + xlim(-4,4) + ylim(-4,4)  + theme(legend.position="bottom",text = element_text(size = 17))
+fviz_pca_biplot(pca, label="var", habillage=mt_4_pca_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom",text = element_text(size = 17))
+
 
 ggsave("pca_small.png", width=8, height=8)
 
@@ -343,11 +345,12 @@ fviz_pca_ind(pca_2,
              )
 
 fviz_pca_ind(pca_2, label="none", habillage=mt_4$loc_lu,
-             addEllipses=TRUE, ellipse.level=0.95, , palette = "Paired", pointshape=16)
+             addEllipses=TRUE, ellipse.level=0.95, , palette = "Paired", pointshape=16, mean.point = FALSE)
 
-fviz_pca_ind(pca_2, label="none", habillage=mt_4$loc_lu, palette = "Paired", pointshape=16)
+fviz_pca_ind(pca_2, label="none", habillage=mt_4$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)
 
-fviz_pca_biplot(pca_2, label="var",habillage=mt_4$loc_lu, palette = "Paired", pointshape=16) + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom", ,text = element_text(size = 17))
+fviz_pca_biplot(pca_2, label="var",habillage=mt_4$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE) + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom", ,text = element_text(size = 17))
+
 
 ggsave("pca_big.png", width=8, height=8)
 ``` 
@@ -408,8 +411,26 @@ mr_alder_pca_done <- mr_alder_pca_nomiss %>% dplyr::select(!c(landuse,location,l
 pca_3 <- prcomp(mr_alder_pca_done, scale=TRUE)
 fviz_eig(pca_3)
 
-fviz_pca_ind(pca_3, label="none", habillage=mr_alder_pca_nomiss$loc_lu, palette = "Paired", pointshape=16)  + xlim(-4,4) + ylim(-4,4)
+fviz_pca_ind(pca_3, label="none", habillage=mr_alder_pca_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4)
 
-fviz_pca_biplot(pca_3, label="var", habillage=mr_alder_pca_nomiss$loc_lu, palette = "Paired", pointshape=16)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom",text = element_text(size = 17))
-ggsave("pca_smallest.png", width=8, height=8)
+fviz_pca_biplot(pca_3, label="var", habillage=mr_alder_pca_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4)
+
+#PCA with litter mass loss coarse mesh size alder WITHOUT earthworms and micro-arthropods NOT SURE IF CORRECT?
+mr_alder_pca_wo <- mr_alder %>% dplyr::select(c(landuse,location,loc_lu, litter_mass_loss_final, ph_kcl,moisture_percentage,som_percentage, b.d., NO2_NO3_mg_kg,
+                                     NH4_mg_kg,Total_P_mg_kg,Olsen_P_mg_kg,Total_plfa,AMF_NLFA))
+
+colSums(is.na(mr_alder_pca_wo))
+mr_alder_pca_wo_nomiss <- na.omit(mr_alder_pca_wo)
+colSums(is.na(mr_alder_pca_wo_nomiss))
+
+mr_alder_pca_done <- mr_alder_pca_wo_nomiss %>% dplyr::select(!c(landuse,location,loc_lu))
+
+pca_4 <- prcomp(mr_alder_pca_done, scale=TRUE)
+fviz_eig(pca_4)
+
+
+fviz_pca_ind(pca_4, label="none", habillage=mr_alder_pca_wo_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom",text = element_text(size = 17))
+
+fviz_pca_biplot(pca_4, label="var", habillage=mr_alder_pca_wo_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom",text = element_text(size = 17))
+
 ``` 
