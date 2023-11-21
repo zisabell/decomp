@@ -64,7 +64,10 @@ lml_mt <- lml_2 %>% left_join(mt_4, by ="vb_code")
 
 # Results
 
-Average AMF biomass in grassland was `r format(mt_4 %>% filter(landuse == "Grassland") %>% summarize(mean = mean(AMF_NLFA, na.rm=TRUE)), digits=2)` ug/gr. (example)
+## Soil characteristics  
+When comparing soil characteristics between food forests and grasslands significant differences were found with higher moisture and soil organic matter content, lower bulk density, higher oribatid and other (mesostigmatic and prostigmatic) mite abundance for food forests, but significantly higher earthworm abundance and biomass and higher AMF biomass for grasslands. No significant differences were found for pH, nutrient concentrations (C, N, P), springtail abundance and fungal (non-AMF), bacterial, actinobacterial, general microbial biomass and total microbial biomass (table 1). 
+
+<!-- Average AMF biomass in grassland was `r format(mt_4 %>% filter(landuse == "Grassland") %>% summarize(mean = mean(AMF_NLFA, na.rm=TRUE)), digits=2)` ug/gr. (example) -->
 
 ``` {r table}
 
@@ -91,8 +94,6 @@ for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_k
   f <- formula(paste(i,"~ landuse + (1|location)"))
   models[[i]] <- lmer(f, data=mt_4, na.action = "na.omit")
 }
-  
-# cld(lsmeans(models$AMF_NLFA,~ landuse, adjust="tukey"), Letters = c(letters))
 
 tab_order <- c('b.d.','moisture_percentage','ph_kcl','som_percentage','NO2_NO3_mg_kg','NH4_mg_kg',
                'Total_P_mg_kg', 'Olsen_P_mg_kg','Bacteria_total','Microbial',               
@@ -154,19 +155,21 @@ tab %>%
                        Total_plfa = "Total PFLA (µg/g)", AMF_NLFA = "AMF from NFLA (µg/g)")) %>%
   merge_v(j = ~ category) %>% 
   hline(j = ~ category, part = "all") %>%
-  set_table_properties(layout = "autofit")
+  set_table_properties(layout = "autofit") %>%
+  set_caption(caption = "Table 1. ANOVA results comparing food forests to grasslands for chemical, physical and biological variables. Table shows mean (standard deviation), F statistic and p-values.", 
+                  style = "Table Caption")
 
 ```
 
-# Statistics
-
-## Litter mass loss data - Litter species x mesh size x land use (three way ANOVA)
+## Litter mass loss data  
+An interaction between land use, litter species and mesh size was observed for litter mass loss in coarse chestnut litter bags in grassland sites. Litter mass loss was lowest here. 
+Litter mass loss was highest for hazel with medium and coarse mesh size and alder with the coarse mesh size. Medium levels of litter mass loss were found for hazel with fine mesh size and alder with fine and medium mesh size. Lowest levels of litter mass loss found for chestnut leaves for all mesh sizes. Effect of land use clear for alder with the coarse mesh size. Higher values were found in grasslands than food forests. 
 
 ``` {r statistics litter mass loss, fig.dim = c(10,8)}
 
 # Descriptive statistics
 # summarySE(lml_2, measurevar="litter_mass_loss_final", na.rm=TRUE) # for overall summary
-summarySE(lml_2, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
+# summarySE(lml_2, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
 
 # Levene's test for homogeneity of variances
 lml_2 %>% group_by(landuse, location, litter_sp, mesh_size) %>%
@@ -199,7 +202,10 @@ table_test <- litter_tab %>%
     labelizor(labels = c(landuse = "Land use", litter_sp = "Litter species", mesh_size = "Mesh size", 'landuse:litter_sp' = "Land use x Litter species", 'landuse:mesh_size' = "Land use x Mesh size", 'litter_sp:mesh_size' = "Litter species x Mesh size", 'landuse:litter_sp:mesh_size' = "Land use x Litter species x Mesh size", NumDF = "Num. DF", DenDF = "Den. DF", F.value = "F-value", Pr..F. = "P-value")) %>%
       colformat_double(j = c("DenDF"), digits = 0) %>%
         colformat_double(j = c("F.value", "Pr..F."), digits = 3) %>%
-          set_table_properties(layout = "autofit")
+          set_table_properties(layout = "autofit") %>%
+  set_caption(caption = "Table 2. ANOVA results comparing litter mass loss with an interaction effect between land use, litter species and mesh size, including degrees of freedom, F statistic and p-values.", 
+                  style = "Table Caption")
+table_test
 
 # Three-way interaction letters are there but it looks kind of messy (probably better to do it manually again)
 threeway_cld <- cld(lsmeans(threeway.lmeFit,~ landuse * litter_sp * mesh_size,adjust="tukey"), Letters = c(letters))
@@ -209,13 +215,13 @@ threeway_cld
 ggqqplot(residuals(threeway.lmeFit))
 shapiro.test(residuals(threeway.lmeFit)) # it is significant...
 
-# Arcsine transformation (does not seem to make any difference)
-lml_3 <- lml_2
-lml_3$litter_mass_loss_final <- asin(sqrt(lml_2$litter_mass_loss_final))
-threeway_3.lmeFit <- lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse),data=lml_3, 
-                      na.action = "na.omit")
-ggqqplot(residuals(threeway_3.lmeFit))
-shapiro.test(residuals(threeway_3.lmeFit))
+# # Arcsine transformation (does not seem to make any difference)
+# lml_3 <- lml_2
+# lml_3$litter_mass_loss_final <- asin(sqrt(lml_2$litter_mass_loss_final))
+# threeway_3.lmeFit <- lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse),data=lml_3, 
+#                       na.action = "na.omit")
+# ggqqplot(residuals(threeway_3.lmeFit))
+# shapiro.test(residuals(threeway_3.lmeFit))
 
 # Plot the outcomes
 image <- lml_2 %>% group_by(mesh_size, litter_sp) %>%
@@ -230,7 +236,7 @@ image <- lml_2 %>% group_by(mesh_size, litter_sp) %>%
   theme_bw(base_size = 16) +
   scale_x_discrete(labels=c("Food forest", "Grassland")) +
   labs(y="Litter mass loss (%)", x="Land use", fill="Landuse")
-
+image
 ggsave(file="3x3plot_flipped.svg", plot=image, width=10, height=10)
 
 
@@ -239,6 +245,12 @@ ggsave(file="3x3plot_flipped.svg", plot=image, width=10, height=10)
 # Supplement
 
 ## Correlation matrix variables  
+
+AMF positively correlated to pH, negatively to Olsen P, positively to springtails and negatively to oribatid mites. 
+
+All PLFA measures roughly similarly correlated to other variables. Negatively to bulk density and positively to moisture and nutrients. Also positively to earthworms and nematodes.  
+
+Earthworms positively correlated to almost everything except bulk density and mites and springtails.  
 
 ```{r correlation matrix, fig.dim=c(12,12)}
 corr <- round(cor(mt_4 %>% dplyr::select(c('ph_kcl','som_percentage','b.d.','moisture_percentage',
@@ -312,7 +324,8 @@ fviz_pca_ind(pca,
 fviz_pca_ind(pca, label="none", habillage=mt_4_pca_nomiss$location,
              addEllipses=TRUE, ellipse.level=0.95, mean.point = FALSE)
 
-fviz_pca_biplot(pca, label="var", habillage=mt_4_pca_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4)
+fviz_pca_biplot(pca, label="var", habillage=mt_4_pca_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom",text = element_text(size = 17))
+
 
 ggsave("pca_small.png", width=8, height=8)
 
@@ -336,7 +349,8 @@ fviz_pca_ind(pca_2, label="none", habillage=mt_4$loc_lu,
 
 fviz_pca_ind(pca_2, label="none", habillage=mt_4$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)
 
-fviz_pca_biplot(pca_2, label="var",habillage=mt_4$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE) + xlim(-4,4) + ylim(-4,4)
+fviz_pca_biplot(pca_2, label="var",habillage=mt_4$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE) + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom", ,text = element_text(size = 17))
+
 
 ggsave("pca_big.png", width=8, height=8)
 ``` 
@@ -414,7 +428,9 @@ mr_alder_pca_done <- mr_alder_pca_wo_nomiss %>% dplyr::select(!c(landuse,locatio
 pca_4 <- prcomp(mr_alder_pca_done, scale=TRUE)
 fviz_eig(pca_4)
 
-fviz_pca_ind(pca_4, label="none", habillage=mr_alder_pca_wo_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4)
 
-fviz_pca_biplot(pca_4, label="var", habillage=mr_alder_pca_wo_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4)
+fviz_pca_ind(pca_4, label="none", habillage=mr_alder_pca_wo_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom",text = element_text(size = 17))
+
+fviz_pca_biplot(pca_4, label="var", habillage=mr_alder_pca_wo_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom",text = element_text(size = 17))
+
 ``` 
