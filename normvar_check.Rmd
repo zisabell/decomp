@@ -109,6 +109,7 @@ mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=ph_kcl, color=landuse)) +
 # plot(fitted(models$ph_kcl, res))
 qqPlot(residuals(models$ph_kcl))
 shapiro.test(residuals(models$ph_kcl))
+anova(models$ph_kcl)
 # ranef(models$ph_kcl) # calls random effects estimates
 
 # # transformed data pH <<<<< more not-normally distributed residuals!!
