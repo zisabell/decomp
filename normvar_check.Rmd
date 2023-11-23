@@ -107,29 +107,43 @@ for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_k
 
 ``` {R data check pH, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(ph_kcl),sd=sd(ph_kcl),var=var(ph_kcl))
-variances_loc_lu$ph_kcl
+# variances_loc_lu$ph_kcl
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=ph_kcl, color=landuse)) + geom_boxplot() + theme(legend.position='none')
 plot(models$ph_kcl)
 qqPlot(residuals(models$ph_kcl))
-shapiro.test(residuals(models$ph_kcl))
-anova(models$ph_kcl)
-ranef(models$ph_kcl)
+# shapiro.test(residuals(models$ph_kcl))
+# anova(models$ph_kcl)
+# ranef(models$ph_kcl)
 
-# Generalized least squares
-gls_ph <- lme4::gls(ph_kcl ~ landuse, data=mt_4, na.action = na.omit, weights=varPower())
-# weights=varPower() 
-# weights = varIdent(form= ~1|location)
-# correlation = corAR1(form = ~ 1 | location)
-summary(gls_ph)
-anova(gls_ph)
-plot(gls_ph)
-qqPlot(residuals(gls_ph))
-shapiro.test(residuals(gls_ph))
+# # Generalized least squares
+# gls_ph <- lme4::gls(ph_kcl ~ landuse, data=mt_4, na.action = na.omit, weights=varPower())
+# # weights=varPower() 
+# # weights = varIdent(form= ~1|location)
+# # correlation = corAR1(form = ~ 1 | location)
+# summary(gls_ph)
+# anova(gls_ph)
+# plot(gls_ph)
+# qqPlot(residuals(gls_ph))
+# shapiro.test(residuals(gls_ph))
+
+# exp(pH)
+var_exp_ph <- leveneTest(exp(ph_kcl) ~ landuse * location, data=mt_4) #Still unequal variance!!
+mod_exp_ph <- lmerTest::lmer(exp(ph_kcl) ~ landuse + (1|location/landuse), data=mt_4,
+                  na.action = "na.omit")
+# qqPlot(residuals(mod_exp_ph))
+# shapiro.test(residuals(mod_exp_ph)) # normality fixed
+# anova(mod_exp_ph)
 ```
 **pH conclusion:**  
-Unequal variance (p=`r round(variances_loc_lu$ph_kcl$"Pr(>F)"[1], digits=3)`), shapiro wilk shows non-normal distributed residuals (p=`r round(shapiro.test(residuals(models$ph_kcl))$p.value, digits=2)`). Detransformation of pH (exp(-pH)) didn't improve normality of residuals. QQ-plot residuals looks fine. Conclusion: use non-transformed data in linear mixed model??? Or use gls?
-- p-value = `r anova(models$ph_kcl)$'Pr(>F)'`  
-- F-value = `r anova(models$ph_kcl)$'F value'`  
+Unequal variance (p=`r round(variances_loc_lu$ph_kcl$"Pr(>F)"[1], digits=3)`), shapiro wilk shows non-normal distributed residuals (p=`r round(shapiro.test(residuals(models$ph_kcl))$p.value, digits=2)`). QQ-plot residuals looks quite fine.  
+
+Detransformation of pH (exp(-pH)) improved normality of residuals (p=`r round(shapiro.test(residuals(mod_exp_ph))$p.value, digits=2)`), but didn't improve equal variances (p=`r round(var_exp_ph$"Pr(>F)"[1], digits=3)`). 
+
+Results exp-transformed data with linear mixed model:  
+- p-value = `r anova(mod_exp_ph)$'Pr(>F)'`  
+- F-value = `r anova(mod_exp_ph)$'F value'`  
+
+But maybe need to use gls() model?
 
 ### SOM
 
@@ -140,9 +154,9 @@ mt_4 %>% group_by(landuse, location) %>%
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=som_percentage, color=landuse)) + geom_boxplot() + theme(legend.position='none')
 plot(models$som_percentage)
 qqPlot(residuals(models$som_percentage))
-shapiro.test(residuals(models$som_percentage))
-anova(models$som_percentage)
-summary(models$som_percentage)
+# shapiro.test(residuals(models$som_percentage))
+# anova(models$som_percentage)
+# summary(models$som_percentage)
 ```
 
 **som conclusion:**  
@@ -155,12 +169,12 @@ Equal variances, shapiro wilk shows normal residuals. Conclusion: use non-transf
 ``` {R data check b.d., fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% 
           summarize(mean=mean(b.d.),sd=sd(b.d.),var=var(b.d.))
-variances_loc_lu$b.d.
+# variances_loc_lu$b.d.
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=b.d., color=landuse)) + geom_boxplot() + theme(legend.position='none')
 plot(models$b.d.)
 qqPlot(residuals(models$b.d.))
-shapiro.test(residuals(models$b.d.))
-anova(models$b.d.)
+# shapiro.test(residuals(models$b.d.))
+# anova(models$b.d.)
 ```
 
 **bulk density conclusion:**  
@@ -180,8 +194,8 @@ mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=moisture_percentage,
           theme(legend.position='none')
 plot(models$moisture_percentage)
 qqPlot(residuals(models$moisture_percentage))
-shapiro.test(residuals(models$moisture_percentage))
-anova(models$moisture_percentage)
+# shapiro.test(residuals(models$moisture_percentage))
+# anova(models$moisture_percentage)
 ```
 
 **moisture percentage conclusion:**  
@@ -194,20 +208,20 @@ Equal variances, non-normal residuals from shapiro-wilk (p=`r round(shapiro.test
 ``` {R data check NO2_NO3_mg_kg, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% 
   summarize(mean=mean(NO2_NO3_mg_kg),sd=sd(NO2_NO3_mg_kg),var=var(NO2_NO3_mg_kg))
-variances_loc_lu$NO2_NO3_mg_kg
+# variances_loc_lu$NO2_NO3_mg_kg
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=NO2_NO3_mg_kg, color=landuse)) + 
     geom_boxplot() + theme(legend.position='none')
 plot(models$NO2_NO3_mg_kg)
 qqPlot(residuals(models$NO2_NO3_mg_kg))
 # shapiro.test(residuals(models$NO2_NO3_mg_kg))
-anova(models$NO2_NO3_mg_kg)
+# anova(models$NO2_NO3_mg_kg)
 
 # Log transformation
 var_log_N <- leveneTest(log(NO2_NO3_mg_kg) ~ landuse * location, data=mt_4) #UNEQUAL VARIANCES FIXED!
 mod_log_N <- lmerTest::lmer(log(NO2_NO3_mg_kg+0.001) ~ landuse + (1|location/landuse), data=mt_4,
                   na.action = "na.omit")
-qqPlot(residuals(mod_log_N))
-shapiro.test(residuals(mod_log_N))
+# qqPlot(residuals(mod_log_N))
+# shapiro.test(residuals(mod_log_N))
 ```
 
 **NO2 and NO3 conclusion:**   
@@ -226,16 +240,16 @@ mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(NH4_mg_kg),sd=sd(NH
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=NH4_mg_kg, color=landuse)) + geom_boxplot() + theme(legend.position='none')
 plot(models$NH4_mg_kg)
 qqPlot(residuals(models$NH4_mg_kg))
-shapiro.test(residuals(models$NH4_mg_kg))
-anova(models$NH4_mg_kg)
+# shapiro.test(residuals(models$NH4_mg_kg))
+# anova(models$NH4_mg_kg)
 
 var_log_N_2 <- leveneTest(log(NH4_mg_kg) ~ landuse * location, data=mt_4) 
 mod_log_N_2 <- lmerTest::lmer(log(NH4_mg_kg+0.001) ~ landuse + (1|location/landuse), data=mt_4,
                   na.action = "na.omit")
-qqPlot(residuals(mod_log_N_2))
-plot(mod_log_N_2)
-shapiro.test(residuals(mod_log_N_2)) #non-normality fixed!!
-anova(mod_log_N_2)
+# qqPlot(residuals(mod_log_N_2))
+# plot(mod_log_N_2)
+# shapiro.test(residuals(mod_log_N_2)) #non-normality fixed!!
+# anova(mod_log_N_2)
 ```
 
 **NH4 conclusion:**  
@@ -250,7 +264,7 @@ Conclusion: use non-transformed data in linear mixed model.
 
 ``` {R data check Total_P_mg_kg, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Total_P_mg_kg),sd=sd(Total_P_mg_kg),var=var(Total_P_mg_kg))
-variances_loc_lu$Total_P_mg_kg
+# variances_loc_lu$Total_P_mg_kg
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Total_P_mg_kg, color=landuse)) + geom_boxplot() + theme(legend.position='none')
 plot(models$Total_P_mg_kg)
 qqPlot(residuals(models$Total_P_mg_kg))
@@ -421,15 +435,23 @@ mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Mites_oribatid_kg, 
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Mites_oribatid_kg, color=landuse)) + geom_boxplot()  + theme(legend.position='none')
 plot(models$Mites_oribatid_kg)
 qqPlot(residuals(models$Mites_oribatid_kg))
-shapiro.test(residuals(models$Mites_oribatid_kg))
-anova(models$Mites_oribatid_kg)
+# shapiro.test(residuals(models$Mites_oribatid_kg))
+# anova(models$Mites_oribatid_kg)
 
 # Log transformation
 # var_log_ori <- leveneTest(log(Mites_oribatid_kg) ~ landuse * location, data=mt_4)
 mod_log_ori <- lmer(log(Mites_oribatid_kg+0.0001) ~ landuse + (1|location/landuse), data=mt_4,
                   na.action = "na.omit")
-qqPlot(residuals(mod_log_ori))
-shapiro.test(residuals(mod_log_ori)) # DOESNT HELP!!
+# qqPlot(residuals(mod_log_ori))
+# shapiro.test(residuals(mod_log_ori)) # DOESNT HELP!!
+
+# exp transformation
+# var_sqrt_ori <- leveneTest(sqrt(Mites_oribatid_kg) ~ landuse * location, data=mt_4)
+mod_sqrt_ori <- lmer(sqrt(Mites_oribatid_kg) ~ landuse + (1|location/landuse), data=mt_4,
+                  na.action = "na.omit")
+qqPlot(residuals(mod_sqrt_ori))
+shapiro.test(residuals(mod_sqrt_ori))
+anova(mod_sqrt_ori)
 
 #GLMM
 glmm_ori <- lme4::glmer(Mites_oribatid_kg  ~ landuse + (1|location/landuse), data=mt_4,
@@ -441,7 +463,7 @@ qqPlot(residuals(glmm_ori))
 ```
 
 **Oribatid mites conclusion**  
-Non-equal variances (p=`r variances_loc_lu$Mites_oribatid_kg$"Pr(>F)"[1]`), non-normal residuals from shapiro-wilk (p=`r round(shapiro.test(residuals(models$Mites_oribatid_kg))$p.value, digits=3)`). But QQ-plot looks good (1 outlier). Transformation with log/srqt doesn't help. GLMM poisson gives almost okay result for shapiro wilk and okay QQ. 
+Equal variances, non-normal residuals from shapiro-wilk (p=`r round(shapiro.test(residuals(models$Mites_oribatid_kg))$p.value, digits=3)`). But QQ-plot looks good (1 outlier). Transformation with log/srqt doesn't help. GLMM poisson gives almost okay result for shapiro wilk and okay QQ. 
 
 ### Mites_other_kg
 
@@ -456,7 +478,7 @@ anova(models$Mites_other_kg)
 
 # Log transformation
 var_log_mit <- leveneTest(log(Mites_other_kg) ~ landuse * location, data=mt_4)
-mod_log_mit <- lmer(log(Mites_other_kg+0.0001) ~ landuse + (1|location), data=mt_4,
+mod_log_mit <- lmer(log(Mites_other_kg+0.0001) ~ landuse + (1|location/landuse), data=mt_4,
                   na.action = "na.omit")
 qqPlot(residuals(mod_log_mit))
 shapiro.test(residuals(mod_log_mit)) # Normal residuals!!
@@ -474,30 +496,34 @@ Equal variances, non-normal residuals from shapiro-wilk (p=`r round(shapiro.test
 ``` {R data check Bacteria_total, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Bacteria_total),sd=sd(Bacteria_total),var=var(Bacteria_total))
 variances_loc_lu$Bacteria_total
-# par(mfrow=c(1,2))
-# normality$Bacteria_total
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Bacteria_total, color=landuse)) + geom_boxplot() + theme(legend.position='none')
-# plot(fitted(models$Bacteria_total, res))
+plot(models$Bacteria_total)
 qqPlot(residuals(models$Bacteria_total))
 # shapiro.test(residuals(models$Bacteria_total))
 anova(models$Bacteria_total)
+
+# Log transformation
+var_log_bact <- leveneTest(log(Bacteria_total) ~ landuse * location, data=mt_4) #equal variances!!
+mod_log_bact <- lmer(log(Bacteria_total+0.0001) ~ landuse + (1|location/landuse), data=mt_4,
+                  na.action = "na.omit")
+qqPlot(residuals(mod_log_bact))
+shapiro.test(residuals(mod_log_bact))
+anova(mod_log_bact)
 ```
 
 **Total bacteria conclusion:**  
-Equal variances, normal residuals with shapiro. QQ-plot looks good. Conclusion: use non-transformed data in linear mixed model.  
-- p-value = `r tidy(models$Bacteria_total)$p.value[2]`  
-- t-value = `r tidy(models$Bacteria_total)$statistic[2]`  
-- F-value = `r tidy(models$Bacteria_total)$statistic[2]^2`  
+Unequal variances (p=`r variances_loc_lu$Bacteria_total$"Pr(>F)"[1]`), normal residuals with shapiro. QQ-plot looks good. Log-transformation helps! Conclusion: use transformed data in linear mixed model. 
 
-### Microbial
+- p-value = `r anova(mod_log_bact)$'Pr(>F)'`  
+- F-value = `r anova(mod_log_bact)$'F value'` 
+
+### General microbial
 
 ``` {R data check Microbial, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Microbial),sd=sd(Microbial),var=var(Microbial))
-# variances_loc_lu$Microbial
-# par(mfrow=c(1,2))
-# normality$Microbial
+variances_loc_lu$Microbial
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Microbial, color=landuse)) + geom_boxplot() + theme(legend.position='none')
-# plot(fitted(models$Microbial, res))
+plot(models$Microbial)
 qqPlot(residuals(models$Microbial))
 # shapiro.test(residuals(models$Microbial))
 anova(models$Microbial)
@@ -505,93 +531,104 @@ anova(models$Microbial)
 
 **Total microbial conclusion:**  
 Equal variances, normal residuals with shapiro. QQ-plot looks good. Conclusion: use non-transformed data in linear mixed model.  
-- p-value = `r tidy(models$Microbial)$p.value[2]`  
-- t-value = `r tidy(models$Microbial)$statistic[2]`  
-- F-value = `r tidy(models$Microbial)$statistic[2]^2`  
+- p-value = `r anova(models$Microbial)$'Pr(>F)'`  
+- F-value = `r anova(models$Microbial)$'F value'`  
 
 ### Actinobacteria_total
 
 ``` {R data check Actinobacteria_total, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Actinobacteria_total),sd=sd(Actinobacteria_total),var=var(Actinobacteria_total))
 variances_loc_lu$Actinobacteria_total
-# par(mfrow=c(1,2))
-# normality$Actinobacteria_total
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Actinobacteria_total, color=landuse)) + geom_boxplot() + theme(legend.position='none')
-# plot(fitted(models$Actinobacteria_total, res))
+plot(models$Actinobacteria_total)
 qqPlot(residuals(models$Actinobacteria_total))
 # shapiro.test(residuals(models$Actinobacteria_total))
 anova(models$Actinobacteria_total)
+
+# Log transformation
+var_log_act <- leveneTest(log(Actinobacteria_total) ~ landuse * location, data=mt_4) #equal variances!!
+mod_log_act <- lmer(log(Actinobacteria_total+0.0001) ~ landuse + (1|location/landuse), data=mt_4,
+                  na.action = "na.omit")
+qqPlot(residuals(mod_log_act))
+shapiro.test(residuals(mod_log_act))
+anova(mod_log_act)
 ```
 
 **Total actinobacteria conclusion:**  
-Equal variances, normal residuals with shapiro. QQ-plot looks good. Conclusion: use non-transformed data in linear mixed model.  
-- p-value = `r tidy(models$Actinobacteria_total)$p.value[2]`  
-- t-value = `r tidy(models$Actinobacteria_total)$statistic[2]`  
-- F-value = `r tidy(models$Actinobacteria_total)$statistic[2]^2`  
+Unequal variances (p=`r variances_loc_lu$Actinobacteria_total$"Pr(>F)"[1]`), normal residuals with shapiro. QQ-plot looks good. Log-transformation helps. Conclusion: use log-transformed data in linear mixed model.  
+
+- p-value = `r anova(mod_log_act)$'Pr(>F)'`  
+- F-value = `r anova(mod_log_act)$'F value'`   
 
 ### Fungi_total
 
 ``` {R data check Fungi_total, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Fungi_total),sd=sd(Fungi_total),var=var(Fungi_total))
 # variances_loc_lu$Fungi_total
-# par(mfrow=c(1,2))
-# normality$Fungi_total
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Fungi_total, color=landuse)) + geom_boxplot() + theme(legend.position='none')
-# plot(fitted(models$Fungi_total, res))
+plot(models$Fungi_total)
 qqPlot(residuals(models$Fungi_total))
 shapiro.test(residuals(models$Fungi_total))
 anova(models$Fungi_total)
+
+# Log transformation
+var_log_fun <- leveneTest(log(Fungi_total) ~ landuse * location, data=mt_4) #equal variances!!
+mod_log_fun <- lmer(log(Fungi_total+0.0001) ~ landuse + (1|location/landuse), data=mt_4,
+                  na.action = "na.omit")
+qqPlot(residuals(mod_log_fun))
+shapiro.test(residuals(mod_log_fun))
+anova(mod_log_fun)
 ```
 
 **Total fungi conclusion:**  
-Equal variances, normal residuals with shapiro. QQ-plot looks good. Conclusion: use non-transformed data in linear mixed model.  
-- p-value = `r tidy(models$Fungi_total)$p.value[2]`  
-- t-value = `r tidy(models$Fungi_total)$statistic[2]`  
-- F-value = `r tidy(models$Fungi_total)$statistic[2]^2`  
+Equal variances, non-normal residuals with shapiro (p=`r round(shapiro.test(residuals(models$Fungi_total))$p.value, digits=3)`). Conclusion: use log-transformed data in linear mixed model.  
+
+- p-value = `r anova(mod_log_fun)$'Pr(>F)'`  
+- F-value = `r anova(mod_log_fun)$'F value'`  
 
 ### Total_plfa
 
 ``` {R data check Total_plfa, fig.dim=c(3,5)}
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Total_plfa),sd=sd(Total_plfa),var=var(Total_plfa))
 variances_loc_lu$Total_plfa
-# par(mfrow=c(1,2))
-# normality$Total_plfa
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Total_plfa, color=landuse)) + geom_boxplot() + theme(legend.position='none')
-# plot(fitted(models$Total_plfa, res))
+plot(models$Total_plfa)
 qqPlot(residuals(models$Total_plfa))
 # shapiro.test(residuals(models$Total_plfa))
 anova(models$Total_plfa)
+
+# Log transformation
+var_log_plfa <- leveneTest(log(Total_plfa) ~ landuse * location, data=mt_4) #equal variances!!
+mod_log_plfa <- lmer(log(Total_plfa+0.0001) ~ landuse + (1|location/landuse), data=mt_4,
+                  na.action = "na.omit")
+qqPlot(residuals(mod_log_plfa))
+shapiro.test(residuals(mod_log_plfa))
+anova(mod_log_plfa)
 ```
 
 **Total PLFA conclusion:**  
-Equal variances, normal residuals with shapiro. QQ-plot looks good. Conclusion: use non-transformed data in linear mixed model.  
-- p-value = `r tidy(models$Total_plfa)$p.value[2]`  
-- t-value = `r tidy(models$Total_plfa)$statistic[2]`  
-- F-value = `r tidy(models$Total_plfa)$statistic[2]^2`  
+Unequal variances (p=`r variances_loc_lu$Total_plfa$"Pr(>F)"[1]`), normal residuals with shapiro. QQ-plot looks good. Conclusion: use log-transformed data in linear mixed model.  
+
+- p-value = `r anova(mod_log_plfa)$'Pr(>F)'`  
+- F-value = `r anova(mod_log_plfa)$'F value'`   
 
 ### AMF_NLFA
 
 ``` {R data check AMF_NLFA, fig.dim=c(3,5)}
 mt_4 %>% group_by(location,landuse) %>% summarize(mean=mean(AMF_NLFA),sd=sd(AMF_NLFA),var=var(AMF_NLFA))
 variances_loc_lu$AMF_NLFA
-# par(mfrow=c(1,2))
-# normality$AMF_NLFA
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=AMF_NLFA, color=landuse)) + geom_boxplot() + theme(legend.position='none')
-# plot(fitted(models$AMF_NLFA, res))
+plot(models$AMF_NLFA)
 qqPlot(residuals(models$AMF_NLFA))
 shapiro.test(residuals(models$AMF_NLFA))
 anova(models$AMF_NLFA)
 
 # log transform AMF
-# gghistogram(log(mt_4$AMF_NLFA),  fill = 'lightgrey', na.rm=TRUE)
-# mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=log(AMF_NLFA), color=landuse)) + geom_boxplot()
-# amf_transf <- lmer(log(AMF_NLFA) ~ landuse + (1|location), data=mt_4, na.action = "na.omit")
-var_log_amf <- leveneTest(log(AMF_NLFA) ~ landuse * location, data=mt_4) # little bit less significant...but still significant for sure
-# anova(amf_transf)
-# summary(amf_transf)
-# cld(lsmeans(amf_transf,~ landuse,adjust="tukey"), Letters = c(letters))
-# shapiro.test(residuals(amf_transf))
-# qqPlot(residuals(amf_transf))
+mod_log_amf <- lmer(log(AMF_NLFA) ~ landuse + (1|location), data=mt_4, na.action = "na.omit")
+var_log_amf <- leveneTest(log(AMF_NLFA) ~ landuse * location, data=mt_4) # EQUAL VARIANCES!!
+qqPlot(residuals(mod_log_amf))
+shapiro.test(residuals(mod_log_amf)) #NORMAL!!
+anova(mod_log_amf)
 
 # Generalized least squares
 gls_AMF <- gls(AMF_NLFA ~ landuse, data=mt_4, na.action = na.omit, weights=varPower())
@@ -622,5 +659,5 @@ shapiro.test(residuals(gls_AMF))
 ```
 
 **Total AMF (NLFA) conclusion:**  
-Non-equal variances (p=`r variances_loc_lu$AMF_NLFA$"Pr(>F)"[1]`), normal residuals with shapiro. QQ-plot looks good. 
+Non-equal variances (p=`r variances_loc_lu$AMF_NLFA$"Pr(>F)"[1]`), non-normal residuals with shapiro. 
 Log transforming AMF data makes unequal variances a bit less extreme (p=`r var_log_amf$"Pr(>F)"[1]`) but still significant. 
