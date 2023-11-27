@@ -30,6 +30,7 @@ library(reshape2)
 library(lmerTest)
 library(factoextra)
 library(vegan)
+library(GGally)
 ```
 
 ``` {r upload and mutate files}
@@ -176,13 +177,15 @@ variances_lml
 gghistogram(lml_2, x='litter_mass_loss_final', fill = 'lightgrey', na.rm=TRUE)
 
 # Three-way ANOVA
+threeway_slopes <- lmerTest::lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1 + location|landuse),data=lml_2, na.action = "na.omit")
 threeway.lmeFit <- lmerTest::lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size + (1|location/landuse),data=lml_2, na.action = "na.omit")
-summary(threeway.lmeFit)
+summary(threeway_slopes)
 augmented_threeway <- augment(threeway.lmeFit)
 ggplot(augmented_threeway, aes(x = .fitted, y = .resid)) + 
   geom_point()
 outlierTest(threeway.lmeFit) # sample from line 115 is outlier?
 threeway_anova <- anova(threeway.lmeFit)
+anova(threeway.lmeFit,threeway_slopes)
 
 # ANOVA results in table (still need to manually replace the significant and very small P-values by <0.0001)
 litter_tab <- threeway_anova[,3:6]
@@ -285,6 +288,14 @@ ggplot(melt(lower_tri, na.rm=TRUE), aes(Var1, Var2, fill=value)) +
   geom_text(aes(Var1, Var2, label = value), color = "black", size = 4)
 
 ggsave("corrplot.png", width=10, height=10)
+
+# variables <- mt_4 %>% dplyr::select(c('landuse','ph_kcl','som_percentage','b.d.','moisture_percentage',
+#             'Total_P_mg_kg','Olsen_P_mg_kg','C_total','N_total',
+#             'Total_plfa','AMF_NLFA',
+#             'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg',
+#             'earthworms_2022'))
+# ggpairs(variables, ggplot2::aes(colour=landuse))
+
 
 ``` 
 

@@ -430,6 +430,7 @@ Conlusion: use non-transformed data.
 ### Mites_oribatid_kg
 
 ``` {R data check Mites_oribatid_kg, fig.dim=c(3,5)}
+normality$Mites_oribatid_kg
 mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(Mites_oribatid_kg, na.rm=TRUE),sd=sd(Mites_oribatid_kg, na.rm=TRUE),var=var(Mites_oribatid_kg, na.rm=TRUE))
 # variances_loc_lu$Mites_oribatid_kg
 mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=Mites_oribatid_kg, color=landuse)) + geom_boxplot()  + theme(legend.position='none')
@@ -459,6 +460,7 @@ glmm_ori <- lme4::glmer(Mites_oribatid_kg  ~ landuse + (1|location/landuse), dat
 anova(glmm_ori)
 shapiro.test(residuals(glmm_ori)) # almost fixed!!
 plot(glmm_ori)
+summary(glht(glmm_ori, mcp(landuse = "Tukey")), test=adjusted("fdr")) # check adjusted fdr (Benjamini and Hochberg)
 qqPlot(residuals(glmm_ori))
 ```
 
@@ -661,3 +663,12 @@ shapiro.test(residuals(gls_AMF))
 **Total AMF (NLFA) conclusion:**  
 Non-equal variances (p=`r variances_loc_lu$AMF_NLFA$"Pr(>F)"[1]`), non-normal residuals with shapiro. 
 Log transforming AMF data makes unequal variances a bit less extreme (p=`r var_log_amf$"Pr(>F)"[1]`) but still significant. 
+
+
+
+
+``` {r citations}
+citation("lmerTest")
+
+
+```
