@@ -387,6 +387,10 @@ fviz_pca_biplot(pca_2, label="var", palette = "Paired",
                                      title.hjust =0.5))
 
 ggsave("pca_big.png", width=8, height=8)
+
+ind <- get_pca_ind(pca_2)
+
+ind$coord
 ``` 
 
 # PERMANOVA?
@@ -472,17 +476,19 @@ fviz_pca_biplot(pca_3, label="var", habillage=mr_alder_pca_nomiss$loc_lu, palett
 ggsave("pca_smallest.png", width=8, height=8)
 
 
-#PCA with litter mass loss coarse mesh size alder WITHOUT earthworms and micro-arthropods NOT SURE IF CORRECT?
-mr_alder_pca_wo <- mr_alder %>% dplyr::select(c(landuse,location,loc_lu, litter_mass_loss_final, ph_kcl,moisture_percentage,som_percentage, b.d., NO2_NO3_mg_kg,
-                                     NH4_mg_kg,Total_P_mg_kg,Olsen_P_mg_kg,Total_plfa,AMF_NLFA))
+#PCA with litter mass loss coarse mesh size alder WITHOUT earthworms and micro-arthropods
+mr_alder_pca_wo <- mr_alder %>% dplyr::select(c(vb_code,landuse,location,loc_lu, litter_mass_loss_final, ph_kcl,moisture_percentage,som_percentage, b.d., 
+                                                NO2_NO3_mg_kg,NH4_mg_kg,Total_P_mg_kg,Olsen_P_mg_kg,Total_plfa,AMF_NLFA))
+mr_alder_pca_wo <- mr_alder_pca_wo %>% arrange(vb_code)
+
 
 colSums(is.na(mr_alder_pca_wo))
 mr_alder_pca_wo_nomiss <- na.omit(mr_alder_pca_wo)
 colSums(is.na(mr_alder_pca_wo_nomiss))
 
-mr_alder_pca_done <- mr_alder_pca_wo_nomiss %>% dplyr::select(!c(landuse,location,loc_lu))
+mr_alder_pca_done_wo <- mr_alder_pca_wo_nomiss %>% dplyr::select(!c(vb_code,landuse,location,loc_lu))
 
-pca_4 <- prcomp(mr_alder_pca_done, scale=TRUE)
+pca_4 <- prcomp(mr_alder_pca_done_wo, scale=TRUE)
 fviz_eig(pca_4)
 
 
@@ -492,4 +498,58 @@ fviz_pca_biplot(pca_4, label="var", habillage=mr_alder_pca_wo_nomiss$loc_lu, pal
 
 ggsave("pca_lml.png", width=8, height=8)
 
+ind_4 <- get_pca_ind(pca_4)
+ind_4$coord
+PC1 <- ind_4$coord[,1]
+PC2 <- ind_4$coord[,2]
 ``` 
+
+``` {r faunal effect PC1-PC2}
+lml_wide <- lml_2 %>% dplyr::select(-c("ff_code","treatment_code","litter_mass_loss","litter_mass_loss_G","notes")) %>% pivot_wider(names_from = c(mesh_size, litter_sp), values_from = litter_mass_loss_final)
+
+lml_wide <- lml_wide %>% arrange(vb_code)
+
+lml_wide <- lml_wide %>% mutate(alder_faunal = Coarse_Alder-Fine_Alder,
+                    hazel_faunal = Coarse_Hazel-Fine_Hazel,
+                    chestnut_faunal = Coarse_Chestnut-Fine_Chestnut)
+
+# filter out only the 4 subplots that have been used for the litter mass experiment
+mt_5 <- mt_4 %>% filter(plot_nr < 5)
+
+lml_wide <- left_join(lml_wide, mt_5, by = "vb_code")
+
+# PCA only litter mass loss samples
+
+lml_wide <- lml_wide %>% filter(!grepl("VB002|VB116|VB118",vb_code))
+
+lml_wide_long <- lml_wide %>% pivot_longer(cols = c("alder_faunal","hazel_faunal","chestnut_faunal"), values_to="faunal_effect")
+
+lml_wide %>% ggplot(aes(x=earthworms_2022)) + 
+  geom_point(aes(y=alder_faunal), color="#66c2a5", size=3) + geom_smooth(aes(y=alder_faunal),method="lm", se=FALSE, color="#66c2a5") +
+  geom_point(aes(y=hazel_faunal), color="#fc8d62", size=3) + geom_smooth(aes(y=hazel_faunal),method="lm", se=FALSE, color="#fc8d62") +
+  geom_point(aes(y=chestnut_faunal), color="#8da0cb", size=3) + geom_smooth(aes(y=chestnut_faunal),method="lm", se=FALSE, color="#8da0cb") +
+  ylab("Faunal effect (%)") + 
+  xlab("Earthworm abundance") 
+  
+ggsave("faunal_effect_ew.png", height=8, width=8)
+
+lml_wide %>% ggplot(aes(x=PC1)) + 
+  geom_point(aes(y=alder_faunal), color="#66c2a5", size=3) + geom_smooth(aes(y=alder_faunal),method="lm", se=FALSE, color="#66c2a5") +
+  geom_point(aes(y=hazel_faunal), color="#fc8d62", size=3) + geom_smooth(aes(y=hazel_faunal),method="lm", se=FALSE, color="#fc8d62") +
+  geom_point(aes(y=chestnut_faunal), color="#8da0cb", size=3) + geom_smooth(aes(y=chestnut_faunal),method="lm", se=FALSE, color="#8da0cb") +
+  ylab("Faunal effect (%)") + 
+  xlab("PC1") 
+  
+ggsave("faunal_effect_pc1.png", height=8, width=8)  
+
+lml_wide %>% ggplot(aes(x=PC2)) + 
+  geom_point(aes(y=alder_faunal), color="#66c2a5", size=3) + geom_smooth(aes(y=alder_faunal),method="lm", se=FALSE, color="#66c2a5") +
+  geom_point(aes(y=hazel_faunal), color="#fc8d62", size=3) + geom_smooth(aes(y=hazel_faunal),method="lm", se=FALSE, color="#fc8d62") +
+  geom_point(aes(y=chestnut_faunal), color="#8da0cb", size=3) + geom_smooth(aes(y=chestnut_faunal),method="lm", se=FALSE, color="#8da0cb") +
+  ylab("Faunal effect (%)") + 
+  xlab("PC1") 
+  
+ggsave("faunal_effect_pc2.png", height=8, width=8)  
+
+```
+
