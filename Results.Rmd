@@ -42,6 +42,10 @@ lml$mesh_size <- factor(lml$mesh_size, levels=c("Fine","Medium","Coarse"))
 mt <- read_csv2("MASTERFILE_decomp_10.csv")
 cnp <- read_csv("CNP_data.csv")
 
+litter_cn <- read_csv2("litter_cn.csv")
+litter_lignin <- read_csv2("litter_lignin.csv")
+litter_lignin <- litter_lignin %>% dplyr::rename("lignin" = "lignin (mg/g)")
+
 mt_1 <- mt %>% left_join(cnp, by="code")
 
 mt_2 <- mt_1 %>% mutate(age = 2021-year_of_landuse,
@@ -152,6 +156,62 @@ tab %>%
   set_table_properties(layout = "autofit") %>%
   set_caption(caption = "Table 1. ANOVA results comparing food forests to grasslands for chemical, physical and biological variables. Table shows mean (standard deviation), F statistic and p-values.", 
                   style = "Table Caption")
+
+```
+
+## Litter characteristics 
+
+``` {r litter cn lignin table}
+
+# For the litter characteristics, I used lm() instead of lmer() as I couldn't identify random effects?
+
+# Litter CN data statistics
+litter_cn %>% 
+  group_by(litter_species) %>%
+  summarize(
+    mean1 = mean(c_proc),
+    sd1 = sd(c_proc),
+    mean2 = mean(n_proc),
+    sd2 = sd(n_proc),
+    mean3 = mean(cn_ratio),
+    sd3 = sd(cn_ratio),
+  )
+
+cn.lm <- lm(cn_ratio ~ litter_species, data=litter_cn)
+summary(cn.lm)
+cn_anova <- anova(cn.lm)
+cn_anova
+
+cld(lsmeans(cn.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
+
+# Litter lignin data statistics
+
+litter_lignin %>% 
+  group_by(litter_species) %>%
+  summarize(
+    min = min(lignin),
+    max = max(lignin),
+    mean = mean(lignin),
+    sd = sd(lignin)
+  )
+
+lignin.lm <- lm(lignin ~ litter_species, data=litter_lignin)
+summary(lignin.lm)
+lignin_anova <- anova(lignin.lm)
+cld(lsmeans(lignin.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
+
+# C
+c.lm <- lm(c_proc ~ litter_species, data=litter_cn)
+hist(residuals(c.lm))
+shapiro.test(residuals(c.lm))
+anova(c.lm)
+cld(lsmeans(c.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
+
+# N
+n.lm <- lm(n_proc ~ litter_species, data=litter_cn)
+hist(residuals(n.lm))
+anova(n.lm)
+cld(lsmeans(n.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
 
 ```
 
