@@ -47,7 +47,7 @@ mt_1 <- mt %>% left_join(cnp, by="code")
 mt_2 <- mt_1 %>% mutate(age = 2021-year_of_landuse,
                       earthworms_2021 = compost_worms + soil_eating_worms + pendelaars)
 
-mt_2 <- mt_2 %>% rowwise() %>% dplyr::mutate(earthworms_2022 = sum(dplyr::c_across(contains("Abundance"))))
+mt_2 <- mt_2 %>% rowwise() %>% dplyr::mutate(earthworms_2022 = sum(dplyr::c_across(contains("Abundance")))*10)
 mt_2 <- mt_2 %>% dplyr::rename("vb_code" = "code")
 
 # join litter mass data with landuse & location data
@@ -59,7 +59,10 @@ lml_2 <- lml %>% left_join(mt_2_lu_loc, by ="vb_code")
 
 # sum columns mites and earthworms
 mt_4 <- cbind(mt_2, mites_sum = rowSums(mt_2[c('Mites_oribatid_kg','Mites_other_kg')]))
-mt_4 <- cbind(mt_4, biomass_ew_total = rowSums(mt_2[c('Biomass_anecic','Biomass_endogeic','Biomass_epigeic','Biomass_juvenile')]))
+mt_4 <- cbind(mt_4, biomass_ew_total = rowSums(mt_2[c('Biomass_anecic','Biomass_endogeic','Biomass_epigeic','Biomass_juvenile')])*10)
+
+# sum bacteria + actinos
+mt_4 <- cbind(mt_4, bact_total = rowSums(mt_4[c("Bacteria_total","Actinobacteria_total")]))
 
 # join litter mass data with physical, chemical, biological data
 lml_mt <- lml_2 %>% left_join(mt_4, by ="vb_code")
@@ -77,32 +80,30 @@ When comparing soil characteristics between food forests and grasslands signific
 
 # list of model outputs ANOVA
 models <- list()
-for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_kg','NH4_mg_kg',
-            'Total_P_mg_kg','Olsen_P_mg_kg','C_total','N_total','P_total', 
+for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage',
+            'Total_P_mg_kg','Olsen_P_mg_kg','C_total','N_total', 
             'earthworms_2022','biomass_ew_total',
             'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg',
-            'Bacteria_total','Microbial','Actinobacteria_total','Fungi_total','Total_plfa','AMF_NLFA')) {
+            'bact_total','Fungi_total','AMF_NLFA')) {
   f <- formula(paste(i,"~ landuse + (1|location/landuse)"))
   models[[i]] <- lmer(f, data=mt_4, na.action = "na.omit")
 }
 
-tab_order <- c('b.d.','moisture_percentage','ph_kcl','som_percentage','NO2_NO3_mg_kg','NH4_mg_kg',
-               'Total_P_mg_kg', 'Olsen_P_mg_kg','C_total','N_total','P_total',
-               'Bacteria_total','Microbial',               
-               'Actinobacteria_total', 'Fungi_total','Total_plfa','AMF_NLFA',
+tab_order <- c('b.d.','moisture_percentage','ph_kcl','som_percentage',
+               'Total_P_mg_kg', 'Olsen_P_mg_kg','C_total','N_total',
+               'bact_total','AMF_NLFA','Fungi_total',              
                'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg',
                'earthworms_2022','biomass_ew_total')
 
 mt_wide <- mt_4 %>% pivot_longer(cols=c(ph_kcl:b.d.,
-                                        NO2_NO3_mg_kg:Olsen_P_mg_kg,
-                                        Bacteria_total:Springtails_nr_kg,
-                                        C_total:P_total,
-                                        earthworms_2022,biomass_ew_total), names_to="measurement")
+                                        Total_P_mg_kg:Olsen_P_mg_kg,
+                                        Fungi_total, AMF_NLFA:Springtails_nr_kg,
+                                        C_total:N_total,
+                                        earthworms_2022,biomass_ew_total,bact_total), names_to="measurement")
 mt_wide <- mt_wide %>% mutate(category = if_else(measurement=='b.d.'|measurement=='moisture_percentage',
                                                  "Physical",
                                                  if_else(measurement=='ph_kcl'|measurement=='som_percentage'|
-                                                measurement=='NO2_NO3_mg_kg'|measurement=='NH4_mg_kg'|
-                                                measurement=='Total_P_mg_kg'|measurement== 'Olsen_P_mg_kg'|measurement=="C_total"|measurement=="N_total"|measurement=="P_total",
+                                                measurement=='Total_P_mg_kg'|measurement== 'Olsen_P_mg_kg'|measurement=="C_total"|measurement=="N_total",
                                               "Chemical","Biological")))
                                               # if_else(measurement=='Bacteria_total'|measurement=='Microbial'|
                                               #          measurement=='Actinobacteria_total'|
@@ -133,19 +134,19 @@ tab <- mt_wide %>% group_by(landuse, category, measurement) %>%
 tab %>% 
   flextable() %>% 
   labelizor(labels = c(category = "Category", measurement = "Measurements", Food_forest = "Food forest", 
-                       NH4_mg_kg = "Ammonium (mg/kg)", NO2_NO3_mg_kg = "Nitrite and Nitrate (mg/kg)",
                        Total_P_mg_kg = "Total fosfor (mg/kg)", Olsen_P_mg_kg = "Olsen P (mg/kg)", 
-                       b.d. = "Bulk density (g/cm3)", ph_kcl = "pH-KCl", 
+                       b.d. = "Bulk density (g/cm3)", ph_kcl = "pH (KCl)",
+                       C_total = "Total C (%)", N_total = "Total N (%)",
                        moisture_percentage = "Soil moisture (%)", 
                        som_percentage = "Soil organic matter (%)", 
-                       earthworms_2022 = "Earthworms abundance (#/0.1m2)",
-                       biomass_ew_total = "Earthworms biomass (g/0.1m2)",
+                       earthworms_2022 = "Earthworms abundance (#/m2)",
+                       biomass_ew_total = "Earthworms biomass (g/m2)",
                        Springtails_nr_kg = "Springtails abundance (#/kg)", 
                        Mites_oribatid_kg = "Mites oribatid abundance (#/kg)",
                        Mites_other_kg = "Mites other abundance (#/kg)",
-                       Bacteria_total = "Bacteria (µg/g)", Microbial = "Microbial (µg/g)",
-                       Actinobacteria_total = "Actinobacteria (µg/g)", Fungi_total = "Non-AMF fungi (µg/g)",
-                       Total_plfa = "Total PFLA (µg/g)", AMF_NLFA = "AMF from NFLA (µg/g)")) %>%
+                       bact_total = "Bacterial biomass (µg/g)",
+                       Fungi_total = "Non-AMF fungal biomass (µg/g)",
+                       AMF_NLFA = "AMF biomass (µg/g)")) %>%
   merge_v(j = ~ category) %>% 
   hline(j = ~ category, part = "all") %>%
   set_table_properties(layout = "autofit") %>%
@@ -356,7 +357,7 @@ ggsave("pca_small.png", width=8, height=8)
 # PCA without earthworms + micro-arthropods
 
 mt_4_pca_big <- mt_4 %>% dplyr::select(c(ph_kcl,moisture_percentage,som_percentage, b.d.,
-                                     Total_P_mg_kg,Olsen_P_mg_kg,C_total,N_total,Total_plfa,AMF_NLFA
+                                     Total_P_mg_kg,Olsen_P_mg_kg,C_total,N_total,bact_total,Fungi_total,AMF_NLFA
                                      ))
 colSums(is.na(mt_4_pca_big))
 
@@ -368,7 +369,7 @@ pca_2 <- prcomp(mt_4_pca_big, scale=TRUE)
 #              repel = TRUE     # Avoid text overlapping
 #              )
 
-fviz_pca_ind(pca_2, label="none", habillage=mt_4$loc_lu,
+# fviz_pca_ind(pca_2, label="none", habillage=mt_4$loc_lu,
              addEllipses=TRUE, ellipse.level=0.95, , palette = "Paired", pointshape=16, mean.point = FALSE)
 # 
 # fviz_pca_ind(pca_2, label="none", habillage=mt_4$loc_lu, palette = "Paired", pointshape=16, 
@@ -377,20 +378,23 @@ fviz_pca_ind(pca_2, label="none", habillage=mt_4$loc_lu,
 fviz_pca_biplot(pca_2, label="var", palette = "Paired",
                 pointshape=21, fill.ind = mt_4$loc_lu, 
                 col.ind = "black",
-                pointsize=4, mean.point = FALSE, col.var = "darkgrey",
+                pointsize=4, mean.point = FALSE, col.var = "#767676",
                 legend.title="Locations and land uses", 
-                repel=TRUE)+ 
+                repel=TRUE, title="") + 
                 xlim(-4,4) + ylim(-4,4) +
                 theme(legend.position="bottom",
                       text = element_text(size = 14)) +
                 guides(fill=guide_legend(title.position="top", 
-                                     title.hjust =0.5))
+                                     title.hjust =0.5)) + 
+                xlab("PC1 (60.1%)") +
+                ylab("PC2 (20.8%)")
 
 ggsave("pca_big.png", width=8, height=8)
+ggsave("pca_big.svg")
 
 ind <- get_pca_ind(pca_2)
 
-ind$coord
+# ind$coord
 ``` 
 
 # PERMANOVA?
@@ -398,8 +402,7 @@ ind$coord
 ``` {r adonis}
 char <- mt_4 %>% dplyr::select(c('ph_kcl','som_percentage','b.d.','moisture_percentage',
             'Total_P_mg_kg','Olsen_P_mg_kg','C_total','N_total',
-            'Bacteria_total','Microbial','Actinobacteria_total','Fungi_total',
-            'Total_plfa','AMF_NLFA'))
+            'bact_total','Fungi_total','AMF_NLFA'))
 
 char_dist <- vegdist(char, method="bray")
 
@@ -421,32 +424,32 @@ char_tab
 mr_alder <- lml %>% filter(litter_sp == "Alder" & mesh_size == "Coarse") %>%
                   left_join(mt_4, by = "vb_code")
 
-mult_regr_alder <- lm(litter_mass_loss_final ~ ph_kcl + b.d. + NH4_mg_kg + Olsen_P_mg_kg + biomass_ew_total + Springtails_nr_kg + mites_sum + Total_plfa + AMF_NLFA, data = mr_alder)
-
-summary(mult_regr_alder)
-
-stepAIC(mult_regr_alder, direction="both")
+# mult_regr_alder <- lm(litter_mass_loss_final ~ ph_kcl + b.d. + NH4_mg_kg + Olsen_P_mg_kg + biomass_ew_total + Springtails_nr_kg + mites_sum + Total_plfa + AMF_NLFA, data = mr_alder)
+# 
+# summary(mult_regr_alder)
+# 
+# stepAIC(mult_regr_alder, direction="both")
 
 #Hazel
 mr_hazel <- lml %>% filter(litter_sp == "Hazel" & mesh_size == "Coarse") %>%
                   left_join(mt_4, by = "vb_code")
 
-mult_regr_hazel <- lm(litter_mass_loss_final ~ ph_kcl + b.d. + NH4_mg_kg + Olsen_P_mg_kg + biomass_ew_total + Springtails_nr_kg + mites_sum + Total_plfa + AMF_NLFA, data = mr_hazel)
-
-summary(mult_regr_hazel)
-
-stepAIC(mult_regr_hazel, direction="both")
+# mult_regr_hazel <- lm(litter_mass_loss_final ~ ph_kcl + b.d. + NH4_mg_kg + Olsen_P_mg_kg + biomass_ew_total + Springtails_nr_kg + mites_sum + Total_plfa + AMF_NLFA, data = mr_hazel)
+# 
+# summary(mult_regr_hazel)
+# 
+# stepAIC(mult_regr_hazel, direction="both")
 
 #Chestnut
 mr_chestnut <- lml %>% filter(litter_sp == "Chestnut" & mesh_size == "Coarse") %>%
                   left_join(mt_4, by = "vb_code")
 
-mult_regr_chestnut <- lm(litter_mass_loss_final ~ ph_kcl + b.d. + NH4_mg_kg + Olsen_P_mg_kg + biomass_ew_total + Springtails_nr_kg + mites_sum + Total_plfa + AMF_NLFA, data = mr_chestnut)
-
-summary(mult_regr_chestnut)
-
-
-stepAIC(mult_regr_chestnut, direction="both")
+# mult_regr_chestnut <- lm(litter_mass_loss_final ~ ph_kcl + b.d. + NH4_mg_kg + Olsen_P_mg_kg + biomass_ew_total + Springtails_nr_kg + mites_sum + Total_plfa + AMF_NLFA, data = mr_chestnut)
+# 
+# summary(mult_regr_chestnut)
+# 
+# 
+# stepAIC(mult_regr_chestnut, direction="both")
 
 ``` 
 

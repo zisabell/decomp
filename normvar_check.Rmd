@@ -19,6 +19,7 @@ library(multcomp)
 library(emmeans)
 library(broom.mixed)
 library(nlme)
+library(afex)
 
 ```
 
@@ -36,7 +37,7 @@ mt_1 <- mt %>% left_join(cnp, by="code")
 mt_2 <- mt_1 %>% mutate(age = 2021-year_of_landuse,
                       earthworms_2021 = compost_worms + soil_eating_worms + pendelaars)
 
-mt_2 <- mt_2 %>% rowwise() %>% mutate(earthworms_2022 = sum(c_across(contains("Abundance"))))
+mt_2 <- mt_2 %>% rowwise() %>% mutate(earthworms_2022 = sum(c_across(contains("Abundance")))*10)
 mt_2 <- mt_2 %>% rename("vb_code" = "code")
 
 # join litter mass data with landuse & location data
@@ -48,7 +49,10 @@ lml_2 <- lml %>% left_join(mt_2_lu_loc, by ="vb_code")
 # sum columns mites and earthworms
 mt_4 <- cbind(mt_2, mites_sum = rowSums(mt_2[c('Mites_oribatid_kg','Mites_other_kg')]))
 mt_4 <- cbind(mt_4, biomass_ew_total = 
-                rowSums(mt_2[c('Biomass_anecic','Biomass_endogeic','Biomass_epigeic','Biomass_juvenile')]))
+                rowSums(mt_2[c('Biomass_anecic','Biomass_endogeic','Biomass_epigeic','Biomass_juvenile')])*10)
+
+# sum bacteria + actinos
+mt_4 <- cbind(mt_4, bact_total = rowSums(mt_4[c("Bacteria_total","Actinobacteria_total")]))
 
 ```
 ## normality and variances
@@ -61,7 +65,7 @@ vars <- mt_4 %>%
             Total_P_mg_kg, Olsen_P_mg_kg, earthworms_2022, biomass_ew_total,
             Springtails_nr_kg, Mites_oribatid_kg, Mites_other_kg, nr_nematodes_gr_dry,
             Bacteria_total, Microbial, Actinobacteria_total, Fungi_total, Total_plfa, AMF_NLFA,
-            C_total, N_total, P_total) %>%
+            C_total, N_total, P_total, bact_total) %>%
   names() %>%
   set_names()
 
@@ -115,17 +119,6 @@ qqPlot(residuals(models$ph_kcl))
 # anova(models$ph_kcl)
 # ranef(models$ph_kcl)
 
-# # Generalized least squares
-# gls_ph <- lme4::gls(ph_kcl ~ landuse, data=mt_4, na.action = na.omit, weights=varPower())
-# # weights=varPower() 
-# # weights = varIdent(form= ~1|location)
-# # correlation = corAR1(form = ~ 1 | location)
-# summary(gls_ph)
-# anova(gls_ph)
-# plot(gls_ph)
-# qqPlot(residuals(gls_ph))
-# shapiro.test(residuals(gls_ph))
-
 # exp(pH)
 var_exp_ph <- leveneTest(exp(ph_kcl) ~ landuse * location, data=mt_4) #Still unequal variance!!
 mod_exp_ph <- lmerTest::lmer(exp(ph_kcl) ~ landuse + (1|location/landuse), data=mt_4,
@@ -133,6 +126,13 @@ mod_exp_ph <- lmerTest::lmer(exp(ph_kcl) ~ landuse + (1|location/landuse), data=
 # qqPlot(residuals(mod_exp_ph))
 # shapiro.test(residuals(mod_exp_ph)) # normality fixed
 # anova(mod_exp_ph)
+
+#GLMM linear with log link
+ph_glmm_log <- lme4::glmer(ph_kcl ~ landuse + (1|location/landuse), data=mt_4, na.action = "na.omit", family=gaussian(link="log"))
+Anova(ph_glmm_log, type=3)
+summary(ph_glmm_log)
+
+summary(glht(ph_glmm_log, mcp(landuse = "Tukey")), test=adjusted("fdr"))
 ```
 **pH conclusion:**  
 Unequal variance (p=`r round(variances_loc_lu$ph_kcl$"Pr(>F)"[1], digits=3)`), shapiro wilk shows non-normal distributed residuals (p=`r round(shapiro.test(residuals(models$ph_kcl))$p.value, digits=2)`). QQ-plot residuals looks quite fine.  
@@ -157,6 +157,11 @@ qqPlot(residuals(models$som_percentage))
 # shapiro.test(residuals(models$som_percentage))
 # anova(models$som_percentage)
 # summary(models$som_percentage)
+
+som_glmm <- lme4::glmer(som_percentage ~ landuse + (1|location/landuse), data=mt_4, na.action = "na.omit", family=gaussian(link="identity"))
+anova(som_glmm)
+summary(som_glmm)
+
 ```
 
 **som conclusion:**  
@@ -456,7 +461,7 @@ anova(mod_sqrt_ori)
 
 #GLMM
 glmm_ori <- lme4::glmer(Mites_oribatid_kg  ~ landuse + (1|location/landuse), data=mt_4,
-                  na.action = "na.omit", family="poisson")
+                  na.action = "na.omit", family=poisson(link="log"))
 anova(glmm_ori)
 shapiro.test(residuals(glmm_ori)) # almost fixed!!
 plot(glmm_ori)
