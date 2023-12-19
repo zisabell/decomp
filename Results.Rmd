@@ -163,18 +163,24 @@ tab %>%
 
 ``` {r litter cn lignin table}
 
+# For the litter characteristics, I used lm() instead of lmer() as I couldn't identify random effects?
+
 # Litter CN data statistics
 litter_cn %>% 
   group_by(litter_species) %>%
   summarize(
-    min = min(cn_ratio),
-    max = max(cn_ratio),
-    mean = mean(cn_ratio),
-    sd = sd(cn_ratio)
+    mean1 = mean(c_proc),
+    sd1 = sd(c_proc),
+    mean2 = mean(n_proc),
+    sd2 = sd(n_proc),
+    mean3 = mean(cn_ratio),
+    sd3 = sd(cn_ratio),
   )
 
 cn.lm <- lm(cn_ratio ~ litter_species, data=litter_cn)
-anova(cn.lm)
+summary(cn.lm)
+cn_anova <- anova(cn.lm)
+cn_anova
 
 cld(lsmeans(cn.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
 
@@ -185,12 +191,13 @@ litter_lignin %>%
   summarize(
     min = min(lignin),
     max = max(lignin),
-    mean = mean(lignin)/10,
+    mean = mean(lignin),
     sd = sd(lignin)
   )
 
 lignin.lm <- lm(lignin ~ litter_species, data=litter_lignin)
-anova(lignin.lm)
+summary(lignin.lm)
+lignin_anova <- anova(lignin.lm)
 cld(lsmeans(lignin.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
 
 # C
