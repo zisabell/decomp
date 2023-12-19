@@ -68,6 +68,12 @@ mt_4 <- cbind(mt_4, biomass_ew_total = rowSums(mt_2[c('Biomass_anecic','Biomass_
 # sum bacteria + actinos
 mt_4 <- cbind(mt_4, bact_total = rowSums(mt_4[c("Bacteria_total","Actinobacteria_total")]))
 
+#loclu
+mt_4$location <- factor(mt_4$location)
+levels(mt_4$location) <- c("L4","L3","L1", "L2")
+
+mt_4$loc_lu <-paste(mt_4$location, mt_4$landuse, sep="_")
+
 # join litter mass data with physical, chemical, biological data
 lml_mt <- lml_2 %>% left_join(mt_4, by ="vb_code")
 
@@ -156,6 +162,15 @@ tab %>%
   set_table_properties(layout = "autofit") %>%
   set_caption(caption = "Table 1. ANOVA results comparing food forests to grasslands for chemical, physical and biological variables. Table shows mean (standard deviation), F statistic and p-values.", 
                   style = "Table Caption")
+
+```
+
+## check earthworm correlations
+
+``` {r scatterplot}
+mt_4 %>% ggplot(aes(x=ec, y=earthworms_2022, fill=loc_lu)) +
+  geom_point(size=3.5, pch=21) + scale_fill_brewer(palette = "Paired")
+cor.test(mt_4$ec, mt_4$earthworms_2022, method="pearson", use = "complete.obs")
 
 ```
 
@@ -364,11 +379,6 @@ ggsave("corrplot.png", width=10, height=10)
 
 ``` {r PCA }
 #pca with earthworms + micro-arthropods
-mt_4$location <- factor(mt_4$location)
-levels(mt_4$location) <- c("L4","L3","L1", "L2")
-
-mt_4$loc_lu <-paste(mt_4$location, mt_4$landuse, sep="_")
-
 mt_4_pca <- mt_4 %>% dplyr::select(c(landuse,location,loc_lu,ph_kcl,moisture_percentage,som_percentage,
                                      b.d.,Total_P_mg_kg,Olsen_P_mg_kg,
                                      C_total,N_total,
