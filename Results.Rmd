@@ -606,23 +606,25 @@ lml_wide %>% ggplot(aes(x=earthworms_2022)) +
   
 ggsave("faunal_effect_ew.png", height=8, width=8)
 
-lml_wide %>% ggplot(aes(x=PC1)) + 
-  geom_point(aes(y=alder_faunal), color="#66c2a5", size=3) + geom_smooth(aes(y=alder_faunal),method="lm", se=FALSE, color="#66c2a5") +
-  geom_point(aes(y=hazel_faunal), color="#fc8d62", size=3) + geom_smooth(aes(y=hazel_faunal),method="lm", se=FALSE, color="#fc8d62") +
-  geom_point(aes(y=chestnut_faunal), color="#8da0cb", size=3) + geom_smooth(aes(y=chestnut_faunal),method="lm", se=FALSE, color="#8da0cb") +
-  ylab("Faunal effect (%)") + 
-  xlab("PC1") 
+# lml_wide %>% ggplot(aes(x=PC1)) + 
+#   geom_point(aes(y=alder_faunal), color="#66c2a5", size=3) + geom_smooth(aes(y=alder_faunal),method="lm", se=FALSE, color="#66c2a5") +
+#   geom_point(aes(y=hazel_faunal), color="#fc8d62", size=3) + geom_smooth(aes(y=hazel_faunal),method="lm", se=FALSE, color="#fc8d62") +
+#   geom_point(aes(y=chestnut_faunal), color="#8da0cb", size=3) + geom_smooth(aes(y=chestnut_faunal),method="lm", se=FALSE, color="#8da0cb") +
+#   ylab("Faunal effect (%)") + 
+#   xlab("PC1") 
   
-ggsave("faunal_effect_pc1.png", height=8, width=8)  
+# ggsave("faunal_effect_pc1.png", height=8, width=8)  
+# 
+# lml_wide %>% ggplot(aes(x=PC2)) + 
+#   geom_point(aes(y=alder_faunal), color="#66c2a5", size=3) + geom_smooth(aes(y=alder_faunal),method="lm", se=FALSE, color="#66c2a5") +
+#   geom_point(aes(y=hazel_faunal), color="#fc8d62", size=3) + geom_smooth(aes(y=hazel_faunal),method="lm", se=FALSE, color="#fc8d62") +
+#   geom_point(aes(y=chestnut_faunal), color="#8da0cb", size=3) + geom_smooth(aes(y=chestnut_faunal),method="lm", se=FALSE, color="#8da0cb") +
+#   ylab("Faunal effect (%)") + 
+#   xlab("PC2") 
+#   
+# ggsave("faunal_effect_pc2.png", height=8, width=8)  
 
-lml_wide %>% ggplot(aes(x=PC2)) + 
-  geom_point(aes(y=alder_faunal), color="#66c2a5", size=3) + geom_smooth(aes(y=alder_faunal),method="lm", se=FALSE, color="#66c2a5") +
-  geom_point(aes(y=hazel_faunal), color="#fc8d62", size=3) + geom_smooth(aes(y=hazel_faunal),method="lm", se=FALSE, color="#fc8d62") +
-  geom_point(aes(y=chestnut_faunal), color="#8da0cb", size=3) + geom_smooth(aes(y=chestnut_faunal),method="lm", se=FALSE, color="#8da0cb") +
-  ylab("Faunal effect (%)") + 
-  xlab("PC1") 
-  
-ggsave("faunal_effect_pc2.png", height=8, width=8)  
+
 
 ```
 
