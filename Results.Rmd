@@ -31,6 +31,7 @@ library(lmerTest)
 library(factoextra)
 library(vegan)
 library(GGally)
+library(RColorBrewer)
 ```
 
 ``` {r upload and mutate files}
@@ -223,13 +224,14 @@ shapiro.test(residuals(threeway.lmeFit)) # it is significant...
 image <- lml_2 %>% group_by(mesh_size, litter_sp) %>%
   ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
   geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
-  scale_fill_manual(values=wes_palette("Royal1"), labels=c("Food forest","Grassland")) + 
+  scale_fill_manual(labels=c("Food forest","Grassland")) + 
+  scale_fill_brewer(palette="Paired") +
+  scale_fill_manual(values=c("#33A02B","#FF7F00")) +
   geom_point(position = position_jitterdodge(0.4), 
              pch=16, color="black",show.legend = FALSE) +
   geom_text(data = threeway_cld, aes(x = landuse, y = upper.CL, label = .group)) +
-  scale_fill_manual(values=c("#549E39","#ffa600")) +
   facet_grid(litter_sp ~ mesh_size) +
-  theme_bw(base_size = 16) +
+  theme_bw(base_size = 18) +
   scale_x_discrete(labels=c("Food forest", "Grassland")) +
   labs(y="Litter mass loss (%)", x="Land use", fill="Landuse")
 image
