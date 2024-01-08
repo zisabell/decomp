@@ -61,7 +61,7 @@ mt_4 <- cbind(mt_4, bact_total = rowSums(mt_4[c("Bacteria_total","Actinobacteria
 # variables
 
 vars <- mt_4 %>%
-  dplyr::select(ph_kcl, som_percentage, b.d., moisture_percentage, NO2_NO3_mg_kg, NH4_mg_kg,
+  dplyr::select(ph_kcl, som_percentage, b.d., ec, moisture_percentage, NO2_NO3_mg_kg, NH4_mg_kg,
             Total_P_mg_kg, Olsen_P_mg_kg, earthworms_2022, biomass_ew_total,
             Springtails_nr_kg, Mites_oribatid_kg, Mites_other_kg, nr_nematodes_gr_dry,
             Bacteria_total, bact_total, Microbial, Actinobacteria_total, Fungi_total, Total_plfa, AMF_NLFA,
@@ -97,7 +97,7 @@ variances_loc_lu <- map(vars, ~leveneTest(mt_4[[.x]] ~ landuse * location, data 
 ``` {r nested ANOVA all variables}
 # list of model outputs ANOVA
 models <- list()
-for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_kg','NH4_mg_kg',
+for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage', 'ec', 'NO2_NO3_mg_kg','NH4_mg_kg',
             'Total_P_mg_kg','Olsen_P_mg_kg','C_total','N_total','P_total',
             'earthworms_2022','biomass_ew_total',
             'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg','nr_nematodes_gr_dry',
@@ -106,6 +106,25 @@ for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage','NO2_NO3_mg_k
   models[[i]] <- lmerTest::lmer(f, data=mt_4, na.action = "na.omit")
 }
 ``` 
+### ec
+
+``` {R data check ec, fig.dim=c(3,5)}
+mt_4 %>% group_by(landuse) %>% summarize(mean=mean(ec),sd=sd(ec),var=var(ec))
+variances_loc_lu$ec
+mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=ec, color=landuse)) + geom_boxplot() + theme(legend.position='none')
+plot(models$ec)
+qqPlot(residuals(models$ec))
+anova(models$ec)
+shapiro.test(residuals(models$ec))
+
+var_log_ec <- leveneTest(log(ec) ~ landuse * location, data=mt_4) #unequal variances fixed!
+mod_log_ec <- lmerTest::lmer(log(ec+0.001) ~ landuse + (1|location/landuse), data=mt_4,
+                  na.action = "na.omit")
+qqPlot(residuals(mod_log_ec))
+shapiro.test(residuals(mod_log_ec))
+anova(mod_log_ec)
+
+```
 
 ### pH
 

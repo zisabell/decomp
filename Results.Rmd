@@ -76,7 +76,7 @@ mt_4 <- cbind(mt_4, bact_total = rowSums(mt_4[c("Bacteria_total","Actinobacteria
 mt_4$location <- factor(mt_4$location)
 levels(mt_4$location) <- c("L4","L3","L1", "L2")
 
-mt_4$loc_lu <-paste(mt_4$location, mt_4$landuse, sep="_")
+mt_4$loc_lu <- paste(mt_4$location, mt_4$landuse, sep="_")
 
 # join litter mass data with physical, chemical, biological data
 lml_mt <- lml_2 %>% left_join(mt_4, by ="vb_code")
@@ -94,7 +94,7 @@ When comparing soil characteristics between food forests and grasslands signific
 
 # list of model outputs ANOVA
 models <- list()
-for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage',
+for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage', 'ec',
             'Total_P_mg_kg','Olsen_P_mg_kg','C_total','N_total', 
             'earthworms_2022','biomass_ew_total',
             'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg',
@@ -103,20 +103,20 @@ for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage',
   models[[i]] <- lmer(f, data=mt_4, na.action = "na.omit")
 }
 
-tab_order <- c('b.d.','moisture_percentage','ph_kcl','som_percentage',
+tab_order <- c('b.d.','moisture_percentage','ph_kcl','som_percentage', 'ec',
                'Total_P_mg_kg', 'Olsen_P_mg_kg','C_total','N_total',
                'bact_total','AMF_NLFA','Fungi_total',              
                'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg',
                'earthworms_2022','biomass_ew_total')
 
-mt_wide <- mt_4 %>% pivot_longer(cols=c(ph_kcl:b.d.,
+mt_wide <- mt_4 %>% pivot_longer(cols=c(ec,ph_kcl:b.d.,
                                         Total_P_mg_kg:Olsen_P_mg_kg,
                                         Fungi_total, AMF_NLFA:Springtails_nr_kg,
                                         C_total:N_total,
                                         earthworms_2022,biomass_ew_total,bact_total), names_to="measurement")
 mt_wide <- mt_wide %>% mutate(category = if_else(measurement=='b.d.'|measurement=='moisture_percentage',
                                                  "Physical",
-                                                 if_else(measurement=='ph_kcl'|measurement=='som_percentage'|
+                                                 if_else(measurement=='ph_kcl'|measurement=='som_percentage'|measurement=='ec'|
                                                 measurement=='Total_P_mg_kg'|measurement== 'Olsen_P_mg_kg'|measurement=="C_total"|measurement=="N_total",
                                               "Chemical","Biological")))
                                               # if_else(measurement=='Bacteria_total'|measurement=='Microbial'|
@@ -149,7 +149,7 @@ tab %>%
   flextable() %>% 
   labelizor(labels = c(category = "Category", measurement = "Measurements", Food_forest = "Food forest", 
                        Total_P_mg_kg = "Total fosfor (mg/kg)", Olsen_P_mg_kg = "Olsen P (mg/kg)", 
-                       b.d. = "Bulk density (g/cm3)", ph_kcl = "pH (KCl)",
+                       b.d. = "Bulk density (g/cm3)", ph_kcl = "pH (KCl)", ec="Electrical conductivity (mS/m)",
                        C_total = "Total C (%)", N_total = "Total N (%)",
                        moisture_percentage = "Soil moisture (%)", 
                        som_percentage = "Soil organic matter (%)", 
@@ -329,7 +329,7 @@ All PLFA measures roughly similarly correlated to other variables. Negatively to
 Earthworms positively correlated to almost everything except bulk density and mites and springtails.  
 
 ```{r correlation matrix, fig.dim=c(12,12)}
-corr <- round(cor(mt_4 %>% dplyr::select(c('ph_kcl','som_percentage','b.d.','moisture_percentage',
+corr <- round(cor(mt_4 %>% dplyr::select(c('ph_kcl','som_percentage','b.d.','moisture_percentage', 'ec',
             'Total_P_mg_kg','Olsen_P_mg_kg','C_total','N_total',
             'Bacteria_total','Microbial','Actinobacteria_total','Fungi_total','Total_plfa','AMF_NLFA',
             'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg',
@@ -385,7 +385,7 @@ ggsave("corrplot.png", width=10, height=10)
 ``` {r PCA }
 #pca with earthworms + micro-arthropods
 mt_4_pca <- mt_4 %>% dplyr::select(c(landuse,location,loc_lu,ph_kcl,moisture_percentage,som_percentage,
-                                     b.d.,Total_P_mg_kg,Olsen_P_mg_kg,
+                                     b.d.,ec,Total_P_mg_kg,Olsen_P_mg_kg,
                                      C_total,N_total,
                                      Total_plfa,AMF_NLFA,
                                      Mites_oribatid_kg,Mites_oribatid_kg,Mites_other_kg,
@@ -431,7 +431,7 @@ ggsave("pca_small.png", width=8, height=8)
 
 # PCA without earthworms + micro-arthropods
 
-mt_4_pca_big <- mt_4 %>% dplyr::select(c(ph_kcl,moisture_percentage,som_percentage, b.d.,
+mt_4_pca_big <- mt_4 %>% dplyr::select(c(ph_kcl,moisture_percentage,som_percentage, b.d.,ec,
                                      Total_P_mg_kg,Olsen_P_mg_kg,C_total,N_total,bact_total,Fungi_total,AMF_NLFA
                                      ))
 colSums(is.na(mt_4_pca_big))
@@ -461,8 +461,8 @@ fviz_pca_biplot(pca_2, label="var", palette = "Paired",
                       text = element_text(size = 14)) +
                 guides(fill=guide_legend(title.position="top", 
                                      title.hjust =0.5)) + 
-                xlab("PC1 (60.1%)") +
-                ylab("PC2 (20.8%)")
+                xlab("PC1 (55.2%)") +
+                ylab("PC2 (24.5%)")
 
 ggsave("pca_big.png", width=8, height=8)
 ggsave("pca_big.svg")
@@ -475,7 +475,7 @@ ind <- get_pca_ind(pca_2)
 # PERMANOVA?
 
 ``` {r adonis}
-char <- mt_4 %>% dplyr::select(c('ph_kcl','som_percentage','b.d.','moisture_percentage',
+char <- mt_4 %>% dplyr::select(c('ph_kcl','som_percentage','b.d.','ec','moisture_percentage',
             'Total_P_mg_kg','Olsen_P_mg_kg','C_total','N_total',
             'bact_total','Fungi_total','AMF_NLFA'))
 
