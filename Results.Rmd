@@ -387,7 +387,7 @@ ggsave("corrplot.png", width=10, height=10)
 mt_4_pca <- mt_4 %>% dplyr::select(c(landuse,location,loc_lu,ph_kcl,moisture_percentage,som_percentage,
                                      b.d.,ec,Total_P_mg_kg,Olsen_P_mg_kg,
                                      C_total,N_total,
-                                     Total_plfa,AMF_NLFA,
+                                     AMF_NLFA,
                                      Mites_oribatid_kg,Mites_oribatid_kg,Mites_other_kg,
                                      Springtails_nr_kg,earthworms_2022,biomass_ew_total))
 
@@ -421,12 +421,12 @@ fviz_pca_biplot(pca, label="var", palette = "Paired",
                       text = element_text(size = 14)) +
                 guides(fill=guide_legend(title.position="top", 
                                      title.hjust =0.5)) + 
-                xlab("PC1 (41.5%)") +
-                ylab("PC2 (20.7%)")
+                xlab("PC1 (39.0%)") +
+                ylab("PC2 (21.4%)")
 
 
 ggsave("pca_small.png", width=8, height=8)
-ggsave("pca_small.svg")
+ggsave("pca_small_.svg")
 
 ``` 
 
