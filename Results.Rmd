@@ -413,17 +413,20 @@ pca <- prcomp(mt_4_pca_done, scale=TRUE)
 fviz_pca_biplot(pca, label="var", palette = "Paired", 
                 pointshape=21, fill.ind = mt_4_pca_nomiss$loc_lu, 
                 col.ind = "black",
-                pointsize=4, mean.point = FALSE, col.var = "darkgrey",
+                pointsize=4, mean.point = FALSE, col.var = "#767676",
                 legend.title="Locations and land uses", 
-                repel=TRUE)+ 
+                repel=TRUE, title="")+ 
                 xlim(-4,4) + ylim(-4,4) +
                 theme(legend.position="bottom",
                       text = element_text(size = 14)) +
                 guides(fill=guide_legend(title.position="top", 
-                                     title.hjust =0.5))
+                                     title.hjust =0.5)) + 
+                xlab("PC1 (41.5%)") +
+                ylab("PC2 (20.7%)")
 
 
 ggsave("pca_small.png", width=8, height=8)
+ggsave("pca_small.svg")
 
 ``` 
 
