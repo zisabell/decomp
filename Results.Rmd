@@ -168,6 +168,45 @@ tab %>%
                   style = "Table Caption")
 
 ```
+## boxplots AMF, oribatid and EW
+
+``` {r boxplots}
+mt_4 %>% ggplot(aes(x=landuse, y=AMF_NLFA, fill=landuse)) + 
+  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
+  scale_fill_manual(values=wes_palette("Royal1"), labels=c("Food forest","Grassland")) + 
+  geom_point(position = position_jitterdodge(0.4), 
+             pch=16, color="black",
+             show.legend = FALSE) +
+  theme_bw(base_size = 24) +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(x="Landuse", y="Estimation of AMF biomass (ug/gr soil)",  fill="Landuse")
+
+ggsave("AMF.svg", width=10, height = 8)
+
+mt_4 %>% ggplot(aes(x=landuse, y=Mites_oribatid_kg, fill=landuse)) + 
+  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
+  scale_fill_manual(values=wes_palette("Royal1"), labels=c("Food forest","Grassland")) + 
+  geom_point(position = position_jitterdodge(0.4), 
+             pch=16, color="black",
+             show.legend = FALSE) +
+  theme_bw(base_size = 24) +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(x="Landuse", y="Oribatid mite abundance (#/kg soil)",  fill="Landuse")
+
+ggsave("Oribatid.svg", width=10, height = 8)
+
+mt_4 %>% ggplot(aes(x=landuse, y=biomass_ew_total, fill=landuse)) + 
+  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
+  scale_fill_manual(values=wes_palette("Royal1"), labels=c("Food forest","Grassland")) + 
+  geom_point(position = position_jitterdodge(0.4), 
+             pch=16, color="black",
+             show.legend = FALSE) +
+  theme_bw(base_size = 24) +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(x="Landuse", y="Earthworm biomass (g/m2)",  fill="Landuse")
+
+ggsave("EW.svg", width=10, height = 8)
+```
 
 ## check earthworm correlations
 
