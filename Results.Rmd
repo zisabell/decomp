@@ -32,7 +32,8 @@ library(vegan)
 library(GGally)
 library(ggpmisc)
 library(RColorBrewer)
-
+library(glmmTMB)
+library(DHARMa)
 ```
 
 ``` {r upload and mutate files}
@@ -40,7 +41,7 @@ lml <- read_csv2("MASTER_LML.csv")
 
 lml$litter_sp <- factor(lml$litter_sp, levels=c("Alder","Hazel","Chestnut"))
 lml$mesh_size <- factor(lml$mesh_size, levels=c("Fine","Medium","Coarse"))
-lml <- lml %>% mutate(litter_mass_loss_final = litter_mass_loss_final*100)
+# lml <- lml %>% mutate(litter_mass_loss_final = litter_mass_loss_final*100)
 
 mt <- read_csv2("MASTERFILE_decomp_10.csv")
 cnp <- read_csv("CNP_data.csv")
@@ -79,7 +80,6 @@ mt_4$loc_lu <- paste(mt_4$location, mt_4$landuse, sep="_")
 
 # join litter mass data with physical, chemical, biological data
 lml_mt <- lml_2 %>% left_join(mt_4, by ="vb_code")
-
 ```
 
 # Results
@@ -356,11 +356,37 @@ ggsave(file="3x3plot_flipped.svg", plot=image, width=10, height=10)
 
 ``` 
 ```{r three way}
-three_way <- lmerTest::lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size 
-                        + (1|location), data=lml_2, na.action="na.omit")
-anova(three_way)
-emm <- emmeans(three_way, ~ landuse | litter_sp | mesh_size, type="response")
-(contrasts <- contrast(emm, "pairwise", by="mesh_size") %>% rbind())
+#transform data necessary for different models
+lml_2 <- lml_2 %>% mutate(litter_mass_loss_final = ifelse(litter_mass_loss_final > 1,
+                                                         1, litter_mass_loss_final))
+lml_2$litter_mass_loss_final_no_0_1 <- pmin(pmax(lml_2$litter_mass_loss_final, 
+                                                 0.0001), 0.9999)
+lml_2$logit_mass_loss <- log(lml_2$litter_mass_loss_final_no_0_1 /
+                               (1 - lml_2$litter_mass_loss_final_no_0_1))
+
+#different models
+three_way_gauss <- lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size 
+                               + (1|location), data=lml_2, na.action="na.omit")
+three_way_gauss_disp <- glmmTMB(litter_mass_loss_final ~ landuse * litter_sp * 
+                                  mesh_size + (1|location), 
+                               family=gaussian, dispformula = ~ litter_sp,
+                        data=lml_2, na.action="na.omit")
+three_way_gauss_arcsin <- lmer(asin(sqrt(litter_mass_loss_final)) ~ 
+                                 landuse * litter_sp * mesh_size 
+                               + (1|location), data=lml_2, na.action="na.omit")
+three_way_beta <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp *
+                            mesh_size + (1|location), beta_family(), 
+                          dispformula = ~ litter_sp, data=lml_2, na.action="na.omit")
+three_way_zi <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp * mesh_size 
+                     + (1|location), beta_family(), ziformula = ~1, 
+                     data=lml_2, na.action="na.omit")
+
+BIC(three_way_gauss,three_way_gauss_disp,three_way_gauss_arcsin, three_way_beta, three_way_zi) #beta is best
+simres <- simulateResiduals(three_way_beta)
+plot(simres) #severe issues
+# anova(three_way_beta)
+emm <- emmeans(three_way_beta, ~ landuse | litter_sp | mesh_size, type="response")
+(contrasts <- contrast(emm, "pairwise"))
 ```
 
 
