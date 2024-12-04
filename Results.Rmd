@@ -9,7 +9,6 @@ knitr::opts_chunk$set(message = FALSE, echo = FALSE, warning = FALSE)
 ```
 
 ``` {r package}
-
 library(Rmisc)
 library(tidyverse)
 library(kableExtra)
@@ -240,7 +239,7 @@ summary(cn.lm)
 cn_anova <- anova(cn.lm)
 cn_anova
 
-cld(lsmeans(cn.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
+cld(emmeans(cn.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
 
 # Litter lignin data statistics
 
@@ -256,20 +255,20 @@ litter_lignin %>%
 lignin.lm <- lm(lignin ~ litter_species, data=litter_lignin)
 summary(lignin.lm)
 lignin_anova <- anova(lignin.lm)
-cld(lsmeans(lignin.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
+cld(emmeans(lignin.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
 
 # C
 c.lm <- lm(c_proc ~ litter_species, data=litter_cn)
 hist(residuals(c.lm))
 shapiro.test(residuals(c.lm))
 anova(c.lm)
-cld(lsmeans(c.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
+cld(emmeans(c.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
 
 # N
 n.lm <- lm(n_proc ~ litter_species, data=litter_cn)
 hist(residuals(n.lm))
 anova(n.lm)
-cld(lsmeans(n.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
+cld(emmeans(n.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
 
 ```
 
@@ -322,7 +321,7 @@ table_test <- litter_tab %>%
 table_test
 
 # Three-way interaction letters are there but it looks kind of messy (probably better to do it manually again)
-threeway_cld <- cld(lsmeans(threeway.lmeFit,~ landuse * litter_sp * mesh_size,adjust="tukey"), Letters = c(letters))
+threeway_cld <- cld(emmeans(threeway.lmeFit,~ landuse * litter_sp * mesh_size,adjust="tukey"), Letters = c(letters))
 threeway_cld
 
 # Testing the residuals
@@ -356,6 +355,77 @@ ggsave(file="3x3plot_flipped.svg", plot=image, width=10, height=10)
 
 
 ``` 
+```{r three way}
+three_way <- lmerTest::lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size 
+                        + (1|location), data=lml_2, na.action="na.omit")
+anova(three_way)
+emm <- emmeans(three_way, ~ landuse | litter_sp | mesh_size, type="response")
+(contrasts <- contrast(emm, "pairwise", by="mesh_size") %>% rbind())
+```
+
+
+
+```{r two way tests + visualisation}
+two_way_lu_lq <- lme4::lmer(litter_mass_loss_final ~ landuse * litter_sp + (1|location), data=lml_2, na.action = "na.omit")
+emm <- emmeans(two_way_lu_lq, ~ landuse | litter_sp, type="response")
+(contrasts <- contrast(emm, "pairwise", by="litter_sp") %>%
+     rbind())
+
+lu_lq <- lml_2 %>% group_by(litter_sp) %>%
+  ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
+  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
+  scale_fill_manual(labels=c("Food forest","Grassland")) + 
+  scale_fill_brewer(palette="Paired") +
+  scale_fill_manual(values=c("#33A02B","#FF7F00")) +
+  geom_point(position = position_jitterdodge(0.4), 
+             pch=16, color="black",show.legend = FALSE) +
+  # geom_text(data = threeway_cld, aes(x = landuse, y = upper.CL, label = .group)) +
+  facet_grid(~ litter_sp) +
+  theme_bw(base_size = 20) +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(y="Litter mass loss (%)", x="Land use", fill="Landuse")
+lu_lq
+
+two_way_lu_mesh <- lme4::lmer(litter_mass_loss_final ~ landuse * mesh_size + (1|location), data=lml_2, na.action = "na.omit")
+emm <- emmeans(two_way_lu_mesh, ~ landuse | mesh_size, type="response")
+(contrasts <- contrast(emm, "pairwise", by="mesh_size") %>% rbind())
+
+lu_mesh <- lml_2 %>% group_by(mesh_size) %>%
+  ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
+  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
+  scale_fill_manual(labels=c("Food forest","Grassland")) + 
+  scale_fill_brewer(palette="Paired") +
+  scale_fill_manual(values=c("#33A02B","#FF7F00")) +
+  geom_point(position = position_jitterdodge(0.4), 
+             pch=16, color="black",show.legend = FALSE) +
+  # geom_text(data = threeway_cld, aes(x = landuse, y = upper.CL, label = .group)) +
+  facet_grid(~ mesh_size) +
+  theme_bw(base_size = 20) +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(y="Litter mass loss (%)", x="Land use", fill="Landuse")
+lu_mesh
+
+two_way_lu_mesh <- lme4::lmer(litter_mass_loss_final ~ landuse * mesh_size + (1|location), data=lml_2, na.action = "na.omit")
+emm <- emmeans(two_way_lu_mesh, ~ landuse | mesh_size, type="response")
+(contrasts <- contrast(emm, "pairwise", by="mesh_size") %>% rbind())
+
+lp_mesh <- lml_2 %>% group_by(litter_sp) %>%
+  ggplot(aes(x=litter_sp, y=litter_mass_loss_final, fill=litter_sp)) +
+  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
+  # scale_fill_manual(labels=c("Food forest","Grassland")) + 
+  # scale_fill_brewer(palette="Paired") +
+  # scale_fill_manual(values=c("#33A02B","#FF7F00")) +
+  geom_point(position = position_jitterdodge(0.4), 
+             pch=16, color="black",show.legend = FALSE) +
+  # geom_text(data = threeway_cld, aes(x = landuse, y = upper.CL, label = .group)) +
+  facet_grid(~ mesh_size) +
+  theme_bw(base_size = 20) +
+  # scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(y="Litter mass loss (%)", x="Litter species", fill="Landuse")
+lp_mesh
+
+```
+
 
 # Supplement
 
