@@ -340,62 +340,75 @@ shapiro.test(residuals(threeway.lmeFit)) # it is significant...
 image <- lml_2 %>% group_by(mesh_size, litter_sp) %>%
   ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
   geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
-  scale_fill_manual(labels=c("Food forest","Grassland")) + 
-  scale_fill_brewer(palette="Paired") +
-  scale_fill_manual(values=c("#33A02B","#FF7F00")) +
+  scale_fill_manual(values=c("#33A02B","#FF7F00"),
+                    labels=c("Food forest","Grassland")) + 
   geom_point(position = position_jitterdodge(0.4), 
              pch=16, color="black",show.legend = FALSE) +
-  geom_text(data = threeway_cld, aes(x = landuse, y = upper.CL, label = .group)) +
+  # geom_text(data = threeway_cld, aes(x = landuse, y = upper.CL, label = .group)) +
   facet_grid(litter_sp ~ mesh_size) +
   theme_bw(base_size = 20) +
   scale_x_discrete(labels=c("Food forest", "Grassland")) +
-  labs(y="Litter mass loss (%)", x="Land use", fill="Landuse")
+  labs(y="Litter mass loss", x="Land use", fill="Landuse") +
+  ylim(0,1.2)
 image
-ggsave(file="3x3plot_flipped.svg", plot=image, width=10, height=10)
+ggsave(file="3x3plot_no_letters.png", plot=image, width=10, height=10)
 
 
 ``` 
+
 ```{r three way}
+#take NAs out
+lml_3 <- filter(lml_2, !is.na(litter_mass_loss_final))
 #transform data necessary for different models
-lml_2 <- lml_2 %>% mutate(litter_mass_loss_final = ifelse(litter_mass_loss_final > 1,
+lml_3 <- lml_3 %>% mutate(litter_mass_loss_final = ifelse(litter_mass_loss_final > 1,
                                                          1, litter_mass_loss_final))
-lml_2$litter_mass_loss_final_no_0_1 <- pmin(pmax(lml_2$litter_mass_loss_final, 
+lml_3$litter_mass_loss_final_no_0_1 <- pmin(pmax(lml_3$litter_mass_loss_final, 
                                                  0.0001), 0.9999)
-lml_2$logit_mass_loss <- log(lml_2$litter_mass_loss_final_no_0_1 /
-                               (1 - lml_2$litter_mass_loss_final_no_0_1))
+lml_3$logit_mass_loss <- log(lml_3$litter_mass_loss_final_no_0_1 /
+                               (1 - lml_3$litter_mass_loss_final_no_0_1))
 
 #different models
-three_way_gauss <- lmer(litter_mass_loss_final ~ landuse * litter_sp * mesh_size 
-                               + (1|location), data=lml_2, na.action="na.omit")
+three_way_gauss <- glmmTMB(litter_mass_loss_final ~ landuse * litter_sp * mesh_size 
+                               + (1|location), family=gaussian(), 
+                           data=lml_3, na.action="na.omit")
+# three_way_gauss_logit <- glmmTMB(logit_mass_loss ~ landuse * litter_sp * mesh_size 
+#                                + (1|location), family=gaussian(), 
+#                                data=lml_3, na.action="na.omit") #TERRIBLE
 three_way_gauss_disp <- glmmTMB(litter_mass_loss_final ~ landuse * litter_sp * 
                                   mesh_size + (1|location), 
                                family=gaussian, dispformula = ~ litter_sp,
-                        data=lml_2, na.action="na.omit")
-three_way_gauss_arcsin <- lmer(asin(sqrt(litter_mass_loss_final)) ~ 
-                                 landuse * litter_sp * mesh_size 
-                               + (1|location), data=lml_2, na.action="na.omit")
+                        data=lml_3, na.action="na.omit")
+# three_way_gauss_arcsin <- lmer(asin(sqrt(litter_mass_loss_final)) ~ 
+#                                  landuse * litter_sp * mesh_size 
+#                                + (1|location), data=lml_3, na.action="na.omit")
 three_way_beta <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp *
                             mesh_size + (1|location), beta_family(), 
-                          dispformula = ~ litter_sp, data=lml_2, na.action="na.omit")
-three_way_zi <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp * mesh_size 
-                     + (1|location), beta_family(), ziformula = ~1, 
-                     data=lml_2, na.action="na.omit")
+                          dispformula = ~ litter_sp, data=lml_3, na.action="na.omit")
+# three_way_zi <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp * mesh_size 
+#                      + (1|location), beta_family(), ziformula = ~1, 
+#                      data=lml_3, na.action="na.omit")
 
-BIC(three_way_gauss,three_way_gauss_disp,three_way_gauss_arcsin, three_way_beta, three_way_zi) #beta is best
-simres <- simulateResiduals(three_way_beta)
+anova(three_way_gauss_disp, three_way_gauss) #beta is best, gaussian with dispersion is also good
+simres <- simulateResiduals(three_way_gauss_disp)
 plot(simres) #severe issues
-# anova(three_way_beta)
-emm <- emmeans(three_way_beta, ~ landuse | litter_sp | mesh_size, type="response")
-(contrasts <- contrast(emm, "pairwise"))
+plotResiduals(simres, lml_3$mesh_size)
+emmip(three_way_gauss_disp, landuse ~ litter_sp | mesh_size )
+emm <- emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, type="response")
+emm %>% tidy()
+joint_tests(three_way_gauss_disp) %>% flextable()
+(contrasts <- contrast(emm, "pairwise", simple="each", combine = TRUE, adjust="Sidak")) %>% tidy()
+# confint(contrasts)# confint(contrasts)tidy()
 ```
 
 
-
 ```{r two way tests + visualisation}
-two_way_lu_lq <- lme4::lmer(litter_mass_loss_final ~ landuse * litter_sp + (1|location), data=lml_2, na.action = "na.omit")
+two_way_lu_lq <- lmer(litter_mass_loss_final ~ landuse * litter_sp + (1|location),
+                         data=lml_2, na.action = "na.omit")
+simres <- simulateResiduals(two_way_lu_lq)
+plot(simres)
 emm <- emmeans(two_way_lu_lq, ~ landuse | litter_sp, type="response")
 (contrasts <- contrast(emm, "pairwise", by="litter_sp") %>%
-     rbind())
+     rbind()) %>% tidy()
 
 lu_lq <- lml_2 %>% group_by(litter_sp) %>%
   ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
@@ -414,7 +427,7 @@ lu_lq
 
 two_way_lu_mesh <- lme4::lmer(litter_mass_loss_final ~ landuse * mesh_size + (1|location), data=lml_2, na.action = "na.omit")
 emm <- emmeans(two_way_lu_mesh, ~ landuse | mesh_size, type="response")
-(contrasts <- contrast(emm, "pairwise", by="mesh_size") %>% rbind())
+(contrasts <- contrast(emm, "pairwise", by="mesh_size") %>% rbind()) %>% tidy()
 
 lu_mesh <- lml_2 %>% group_by(mesh_size) %>%
   ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
@@ -431,8 +444,8 @@ lu_mesh <- lml_2 %>% group_by(mesh_size) %>%
   labs(y="Litter mass loss (%)", x="Land use", fill="Landuse")
 lu_mesh
 
-two_way_lu_mesh <- lme4::lmer(litter_mass_loss_final ~ landuse * mesh_size + (1|location), data=lml_2, na.action = "na.omit")
-emm <- emmeans(two_way_lu_mesh, ~ landuse | mesh_size, type="response")
+two_way_lp_mesh <- lme4::lmer(litter_mass_loss_final ~ litter_sp * mesh_size + (1|location), data=lml_2, na.action = "na.omit")
+emm <- emmeans(two_way_lp_mesh, ~ litter_sp | mesh_size, type="response")
 (contrasts <- contrast(emm, "pairwise", by="mesh_size") %>% rbind())
 
 lp_mesh <- lml_2 %>% group_by(litter_sp) %>%
