@@ -348,12 +348,9 @@ image <- lml_2 %>% group_by(mesh_size, litter_sp) %>%
   facet_grid(litter_sp ~ mesh_size) +
   theme_bw(base_size = 20) +
   scale_x_discrete(labels=c("Food forest", "Grassland")) +
-  labs(y="Litter mass loss", x="Land use", fill="Landuse") +
-  ylim(0,1.2)
+  labs(y="Litter mass loss", x="Land use", fill="Landuse")
 image
 ggsave(file="3x3plot_no_letters.png", plot=image, width=10, height=10)
-
-
 ``` 
 
 ```{r three way}
@@ -398,6 +395,23 @@ emm %>% tidy()
 joint_tests(three_way_gauss_disp) %>% flextable()
 (contrasts <- contrast(emm, "pairwise", simple="each", combine = TRUE, adjust="Sidak"))
 # confint(contrasts)# confint(contrasts)tidy()
+three_way_cld <- cld(emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, adjust="sidak"), Letters = c(letters))
+
+# Plot the outcomes
+image <- lml_3 %>% group_by(mesh_size, litter_sp) %>%
+  ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
+  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
+  scale_fill_manual(values=c("#33A02B","#FF7F00"),
+                    labels=c("Food forest","Grassland")) + 
+  geom_point(position = position_jitterdodge(0.4), 
+             pch=16, color="black",show.legend = FALSE) +
+  geom_text(data = three_way_cld, aes(x = landuse, y = upper.CL, label = .group)) +
+  facet_grid(litter_sp ~ mesh_size) +
+  theme_bw(base_size = 20) +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(y="Litter mass loss", x="Land use", fill="Landuse")
+image
+ggsave(file="3x3plot_new_letters.png", plot=image, width=10, height=10)
 ```
 
 
