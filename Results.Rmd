@@ -396,7 +396,7 @@ emmip(three_way_gauss_disp, landuse ~ litter_sp | mesh_size )
 emm <- emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, type="response")
 emm %>% tidy()
 joint_tests(three_way_gauss_disp) %>% flextable()
-(contrasts <- contrast(emm, "pairwise", simple="each", combine = TRUE, adjust="Sidak")) %>% tidy()
+(contrasts <- contrast(emm, "pairwise", simple="each", combine = TRUE, adjust="Sidak"))
 # confint(contrasts)# confint(contrasts)tidy()
 ```
 
@@ -406,8 +406,8 @@ two_way_lu_lq <- lmer(litter_mass_loss_final ~ landuse * litter_sp + (1|location
                          data=lml_2, na.action = "na.omit")
 simres <- simulateResiduals(two_way_lu_lq)
 plot(simres)
-emm <- emmeans(two_way_lu_lq, ~ landuse | litter_sp, type="response")
-(contrasts <- contrast(emm, "pairwise", by="litter_sp") %>%
+emm <- emmeans(two_way_lu_lq, ~ landuse * litter_sp, type="response")
+(contrasts <- contrast(emm, "pairwise", simple="each") %>%
      rbind()) %>% tidy()
 
 lu_lq <- lml_2 %>% group_by(litter_sp) %>%
@@ -426,8 +426,8 @@ lu_lq <- lml_2 %>% group_by(litter_sp) %>%
 lu_lq
 
 two_way_lu_mesh <- lme4::lmer(litter_mass_loss_final ~ landuse * mesh_size + (1|location), data=lml_2, na.action = "na.omit")
-emm <- emmeans(two_way_lu_mesh, ~ landuse | mesh_size, type="response")
-(contrasts <- contrast(emm, "pairwise", by="mesh_size") %>% rbind()) %>% tidy()
+emm <- emmeans(two_way_lu_mesh, ~ landuse * mesh_size, type="response")
+(contrasts <- contrast(emm, "pairwise", simple="each") %>% rbind())
 
 lu_mesh <- lml_2 %>% group_by(mesh_size) %>%
   ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
@@ -445,8 +445,8 @@ lu_mesh <- lml_2 %>% group_by(mesh_size) %>%
 lu_mesh
 
 two_way_lp_mesh <- lme4::lmer(litter_mass_loss_final ~ litter_sp * mesh_size + (1|location), data=lml_2, na.action = "na.omit")
-emm <- emmeans(two_way_lp_mesh, ~ litter_sp | mesh_size, type="response")
-(contrasts <- contrast(emm, "pairwise", by="mesh_size") %>% rbind())
+emm <- emmeans(two_way_lp_mesh, ~ litter_sp * mesh_size, type="response")
+(contrasts <- contrast(emm, "pairwise",simple="each") %>% rbind())
 
 lp_mesh <- lml_2 %>% group_by(litter_sp) %>%
   ggplot(aes(x=litter_sp, y=litter_mass_loss_final, fill=litter_sp)) +
@@ -462,7 +462,20 @@ lp_mesh <- lml_2 %>% group_by(litter_sp) %>%
   # scale_x_discrete(labels=c("Food forest", "Grassland")) +
   labs(y="Litter mass loss (%)", x="Litter species", fill="Landuse")
 lp_mesh
+```
 
+```{r one way}
+one_way_lu <- lme4::lmer(litter_mass_loss_final ~ landuse + (1|location), data=lml_2, na.action = "na.omit")
+emm <- emmeans(one_way_lu, ~ landuse, type="response")
+(contrasts <- contrast(emm, "pairwise", simple="each") %>% rbind())
+
+one_way_litter <- lme4::lmer(litter_mass_loss_final ~ litter_sp + (1|location), data=lml_2, na.action = "na.omit")
+emm <- emmeans(one_way_litter, ~ litter_sp, type="response")
+(contrasts <- contrast(emm, "pairwise", simple="each") %>% rbind())
+
+one_way_mesh <- lme4::lmer(litter_mass_loss_final ~ mesh_size + (1|location), data=lml_2, na.action = "na.omit")
+emm <- emmeans(one_way_mesh, ~ mesh_size, type="response")
+(contrasts <- contrast(emm, "pairwise", simple="each") %>% rbind())
 ```
 
 
