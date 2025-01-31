@@ -387,7 +387,7 @@ three_way_beta <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp *
 
 anova(three_way_gauss_disp, three_way_gauss) #beta is best, gaussian with dispersion is also good
 simres <- simulateResiduals(three_way_gauss_disp)
-plot(simres) #severe issues
+plot(simres) 
 plotResiduals(simres, lml_3$mesh_size)
 emmip(three_way_gauss_disp, landuse ~ litter_sp | mesh_size )
 emm <- emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, type="response")
