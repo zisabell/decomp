@@ -9,29 +9,30 @@ knitr::opts_chunk$set(message = FALSE, echo = FALSE, warning = FALSE)
 ```
 
 ``` {r package}
-library(Rmisc)
+# library(Rmisc)
 library(tidyverse)
-library(kableExtra)
+# library(kableExtra)
 library(flextable)
-library(ggpubr)
-library(rstatix)
-library(readxl)
-library(writexl)
+# library(ggpubr)
+# library(rstatix)
+# library(readxl)
+# library(writexl)
 library(car)
-library(wesanderson)
+# library(wesanderson)
 library(multcomp)
-library(multcompView)
+# library(multcompView)
 library(emmeans)
-library(broom)
-library(broom.mixed)
-library(ggcorrplot)
-library(reshape2)
-library(lmerTest)
+# library(broom)
+# library(broom.mixed)
+# library(ggcorrplot)
+# library(reshape2)
+# library(lmerTest)
 library(factoextra)
 library(vegan)
-library(GGally)
-library(ggpmisc)
-library(RColorBrewer)
+# library(GGally)
+# library(ggpmisc)
+# library(RColorBrewer)
+library(lme4)
 library(glmmTMB)
 library(DHARMa)
 ```
@@ -90,7 +91,7 @@ When comparing soil characteristics between food forests and grasslands signific
 <!-- Average AMF biomass in grassland was `r format(mt_4 %>% filter(landuse == "Grassland") %>% summarize(mean = mean(AMF_NLFA, na.rm=TRUE)), digits=2)` ug/gr. (example) -->
 
 ``` {r table}
-
+#This code can go out here because it's in norvar_check?:
 # list of model outputs ANOVA
 models <- list()
 for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage', 'ec',
@@ -219,9 +220,6 @@ cor.test(mt_4$ec, mt_4$earthworms_2022, method="pearson", use = "complete.obs")
 ## Litter characteristics 
 
 ``` {r litter cn lignin table}
-
-# For the litter characteristics, I used lm() instead of lmer() as I couldn't identify random effects?
-
 # Litter CN data statistics
 litter_cn %>% 
   group_by(litter_species) %>%
