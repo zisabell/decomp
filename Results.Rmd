@@ -344,7 +344,8 @@ emmip(three_way_gauss_disp, landuse ~ litter_sp | mesh_size )
 emm <- emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, type="response", adjust="Tukey")
 # joint_tests(three_way_gauss_disp) %>% flextable()
 (contrasts <- contrast(emm, "pairwise", simple="each", combine = TRUE, adjust="Tukey"))
-# confint(contrasts)# confint(contrasts)tidy()
+contrasts_df <- as.data.frame(contrasts)
+pairs(emmeans(emm, ~ litter_sp, type="response", adjust="Tukey"))
 three_way_cld <- cld(emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, adjust="Tukey"), Letters = letters)
 three_way_cld
 
