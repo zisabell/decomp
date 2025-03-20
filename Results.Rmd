@@ -169,54 +169,6 @@ tab %>%
                   style = "Table Caption")
 
 ```
-## boxplots AMF, oribatid and EW
-
-``` {r boxplots}
-mt_4 %>% ggplot(aes(x=landuse, y=AMF_NLFA, fill=landuse)) + 
-  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
-  scale_fill_manual(values=wes_palette("Royal1"), labels=c("Food forest","Grassland")) + 
-  geom_point(position = position_jitterdodge(0.4), 
-             pch=16, color="black",
-             show.legend = FALSE) +
-  theme_bw(base_size = 24) +
-  scale_x_discrete(labels=c("Food forest", "Grassland")) +
-  labs(x="Landuse", y="Estimation of AMF biomass (ug/gr soil)",  fill="Landuse")
-
-ggsave("AMF.svg", width=10, height = 8)
-
-mt_4 %>% ggplot(aes(x=landuse, y=Mites_oribatid_kg, fill=landuse)) + 
-  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
-  scale_fill_manual(values=wes_palette("Royal1"), labels=c("Food forest","Grassland")) + 
-  geom_point(position = position_jitterdodge(0.4), 
-             pch=16, color="black",
-             show.legend = FALSE) +
-  theme_bw(base_size = 24) +
-  scale_x_discrete(labels=c("Food forest", "Grassland")) +
-  labs(x="Landuse", y="Oribatid mite abundance (#/kg soil)",  fill="Landuse")
-
-ggsave("Oribatid.svg", width=10, height = 8)
-
-mt_4 %>% ggplot(aes(x=landuse, y=biomass_ew_total, fill=landuse)) + 
-  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
-  scale_fill_manual(values=wes_palette("Royal1"), labels=c("Food forest","Grassland")) + 
-  geom_point(position = position_jitterdodge(0.4), 
-             pch=16, color="black",
-             show.legend = FALSE) +
-  theme_bw(base_size = 24) +
-  scale_x_discrete(labels=c("Food forest", "Grassland")) +
-  labs(x="Landuse", y="Earthworm biomass (g/m2)",  fill="Landuse")
-
-ggsave("EW.svg", width=10, height = 8)
-```
-
-## check earthworm correlations
-
-``` {r scatterplot}
-mt_4 %>% ggplot(aes(x=ec, y=earthworms_2022, fill=loc_lu)) +
-  geom_point(size=3.5, pch=21) + scale_fill_brewer(palette = "Paired")
-cor.test(mt_4$ec, mt_4$earthworms_2022, method="pearson", use = "complete.obs")
-
-```
 
 ## Litter characteristics 
 
@@ -364,9 +316,9 @@ lml_3 <- filter(lml_2, !is.na(litter_mass_loss_final))
 #                                (1 - lml_3$litter_mass_loss_final_no_0_1))
 
 #different models
-three_way_gauss <- glmmTMB(litter_mass_loss_final ~ landuse * litter_sp * mesh_size 
-                               + (1|location), family=gaussian(), 
-                           data=lml_3, na.action="na.omit")
+# three_way_gauss <- glmmTMB(litter_mass_loss_final ~ landuse * litter_sp * mesh_size 
+#                                + (1|location), family=gaussian(), 
+#                            data=lml_3, na.action="na.omit")
 # three_way_gauss_logit <- glmmTMB(logit_mass_loss ~ landuse * litter_sp * mesh_size 
 #                                + (1|location), family=gaussian(), 
 #                                data=lml_3, na.action="na.omit") #TERRIBLE
@@ -377,9 +329,9 @@ three_way_gauss_disp <- glmmTMB(litter_mass_loss_final ~ landuse * litter_sp *
 # three_way_gauss_arcsin <- lmer(asin(sqrt(litter_mass_loss_final)) ~ 
 #                                  landuse * litter_sp * mesh_size 
 #                                + (1|location), data=lml_3, na.action="na.omit")
-three_way_beta <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp *
-                            mesh_size + (1|location), beta_family(), 
-                          dispformula = ~ litter_sp, data=lml_3, na.action="na.omit")
+# three_way_beta <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp *
+#                             mesh_size + (1|location), beta_family(), 
+#                           dispformula = ~ litter_sp, data=lml_3, na.action="na.omit")
 # three_way_zi <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp * mesh_size 
 #                      + (1|location), beta_family(), ziformula = ~1, 
 #                      data=lml_3, na.action="na.omit")
@@ -389,266 +341,55 @@ simres <- simulateResiduals(three_way_gauss_disp)
 plot(simres) #no severe issues
 plotResiduals(simres, lml_3$mesh_size)
 emmip(three_way_gauss_disp, landuse ~ litter_sp | mesh_size )
-emm <- emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, type="response")
-emm %>% tidy()
-joint_tests(three_way_gauss_disp) %>% flextable()
-(contrasts <- contrast(emm, "pairwise", simple="each", combine = TRUE, adjust="Sidak"))
-# confint(contrasts)# confint(contrasts)tidy()
+emm <- emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, type="response", adjust="Tukey")
+# joint_tests(three_way_gauss_disp) %>% flextable()
+(contrasts <- contrast(emm, "pairwise", simple="each", combine = TRUE, adjust="Tukey"))
+contrasts_df <- as.data.frame(contrasts)
+pairs(emmeans(emm, ~ litter_sp, type="response", adjust="Tukey"))
 three_way_cld <- cld(emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, adjust="Tukey"), Letters = letters)
+three_way_cld
+
+#visualize interaction effect
+emm_df <- as.data.frame(emm)
+ggplot(emm_df, aes(x = landuse, y = emmean, color = litter_sp, group = litter_sp)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~ mesh_size) +
+  labs(y = "Estimated Mean", x = "landuse", color = "Litter species")
 
 # Plot the outcomes
 image <- lml_3 %>%
   ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse, color=landuse)) +
   geom_boxplot(outlier.shape = NA, alpha=0.5, show.legend = FALSE, width=0.5) +
-  scale_fill_manual(values=c("#E1BE6A","#40B0A6"),
+  scale_fill_manual(values=c("#56B4E9", "#D55E00" ),
                     labels=c("Food forest","Grassland")) + 
-  scale_color_manual(values=c("#E1BE6A","#40B0A6"),
+  scale_color_manual(values=c("#56B4E9", "#D55E00" ),
                     labels=c("Food forest","Grassland")) + 
-  # geom_point(aes(color=landuse),position = position_jitterdodge(0.4), 
-  #            pch=16, show.legend = FALSE) +
-  geom_beeswarm(aes(color = landuse), dodge.width = 1, cex = 2.5, show.legend = FALSE) +
+  geom_beeswarm(aes(color = landuse), dodge.width = 1, cex = 2.5) +
   geom_point(
     data = three_way_cld,
     aes(y = emmean, x = landuse),
     size = 2,
-    color = "black"
+    color = "black", show.legend = FALSE
   ) +
     geom_errorbar(
     data = three_way_cld,
     aes(y=emmean, ymin = lower.CL, ymax = upper.CL, x = landuse),
     width = 0,
-    color = "black"
+    linewidth = 0.5, 
+    color = "black", show.legend = FALSE
   ) +
-  geom_text(data = three_way_cld, aes(x = landuse, y = upper.CL, label = .group)) +
+  geom_text(data = three_way_cld, aes(x = landuse, y = upper.CL, label = .group), show.legend = FALSE) +
   facet_grid(litter_sp ~ mesh_size) +
   theme_bw(base_size = 20) +
+  theme(legend.position="bottom") +
   scale_x_discrete(labels=c("Food forest", "Grassland")) +
   labs(y="Litter mass loss", x="Land use", fill="Landuse")
 image
-ggsave(file="3x3plot_new_letters.png", plot=image, width=10, height=10)
+ggsave(file="LML_final.svg", width=12, height=10)
 ```
-
-```{r three way NEW LMLLLLLL}
-#take NAs out
-lml_3 <- filter(lml_2, !is.na(litter_mass_loss_final_3))
-#transform data necessary for different models
-# lml_3 <- lml_3 %>% mutate(litter_mass_loss_final = ifelse(litter_mass_loss_final > 1,
-#                                                          1, litter_mass_loss_final))
-# lml_3$litter_mass_loss_final_no_0_1 <- pmin(pmax(lml_3$litter_mass_loss_final, 
-#                                                  0.0001), 0.9999)
-# lml_3$logit_mass_loss <- log(lml_3$litter_mass_loss_final_no_0_1 /
-#                                (1 - lml_3$litter_mass_loss_final_no_0_1))
-
-#different models
-three_way_gauss <- glmmTMB(litter_mass_loss_final ~ landuse * litter_sp * mesh_size 
-                               + (1|location), family=gaussian(), 
-                           data=lml_3, na.action="na.omit")
-# three_way_gauss_logit <- glmmTMB(logit_mass_loss ~ landuse * litter_sp * mesh_size 
-#                                + (1|location), family=gaussian(), 
-#                                data=lml_3, na.action="na.omit") #TERRIBLE
-three_way_gauss_disp <- glmmTMB(litter_mass_loss_final_3 ~ landuse * litter_sp * 
-                                  mesh_size + (1|location), 
-                               family=gaussian, dispformula = ~ litter_sp,
-                        data=lml_3, na.action="na.omit")
-# three_way_gauss_arcsin <- lmer(asin(sqrt(litter_mass_loss_final)) ~ 
-#                                  landuse * litter_sp * mesh_size 
-#                                + (1|location), data=lml_3, na.action="na.omit")
-three_way_beta <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp *
-                            mesh_size + (1|location), beta_family(), 
-                          dispformula = ~ litter_sp, data=lml_3, na.action="na.omit")
-# three_way_zi <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp * mesh_size 
-#                      + (1|location), beta_family(), ziformula = ~1, 
-#                      data=lml_3, na.action="na.omit")
-
-summary(three_way_gauss_disp)
-anova(three_way_gauss_disp, three_way_gauss) #beta is best, gaussian with dispersion is also good
-simres <- simulateResiduals(three_way_gauss_disp)
-plot(simres) #no severe issues
-plotResiduals(simres, lml_3$mesh_size)
-emmip(three_way_gauss_disp, landuse ~ litter_sp | mesh_size )
-emm <- emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, type="response")
-emm_tidy <- emm %>% tidy()
-emm_lu <- emmeans(three_way_gauss_disp, pairwise ~ landuse | litter_sp | mesh_size, type="response")
-emm_lu
-joint_tests(three_way_gauss_disp) %>% flextable()
-(contrasts <- contrast(emm, "pairwise", simple="each", combine = TRUE, adjust="Tukey"))
-# confint(contrasts)# confint(contrasts)tidy()
-three_way_cld <- cld(emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, adjust="tukey"), Letters = letters)
-three_way_cld
-
-# Plot the outcomes
-image <- lml_3 %>% group_by(mesh_size, litter_sp) %>%
-  ggplot(aes(x=landuse, y=litter_mass_loss_final_3, fill=landuse, color=landuse)) +
-  geom_boxplot(outlier.shape = NA,color = NA, alpha=0.4, show.legend = FALSE) +
-  scale_fill_manual(values=c("#56B4E9", "#D55E00" ),
-                    labels=c("Food forest","Grassland")) + 
-  scale_color_manual(values=c("#56B4E9", "#D55E00" ),
-                    labels=c("Food forest","Grassland")) +
-  # geom_point(position = position_jitterdodge(0.4), 
-  #            pch=16, color="black",show.legend = FALSE) + 
-  geom_beeswarm(aes(color = landuse), dodge.width = 1, cex = 3, pch=19, show.legend = FALSE) +
-  geom_point(
-    data = three_way_cld,
-    aes(y = emmean, x = landuse),
-    size = 3,
-    color = "black"
-  ) +
-    geom_errorbar(
-    data = three_way_cld,
-    aes(y=emmean, ymin = lower.CL, ymax = upper.CL, x = landuse),
-    width = 0,
-    color = "black"
-  ) +
-  geom_text(data = three_way_cld, aes(x = landuse, y = upper.CL, label = .group)) +
-  facet_grid(litter_sp ~ mesh_size) +
-  theme_bw(base_size = 20) +
-  scale_x_discrete(labels=c("Food forest", "Grassland")) +
-  labs(y="Litter mass loss", x="Land use", fill="Landuse")
-image
-ggsave(file="3x3plot_new_letters.png", plot=image, width=10, height=10)
-ggsave(file="LML_final.svg", width=10, height=10)
-```
-
-
-```{r two way tests + visualisation}
-two_way_lu_lq <- lmer(litter_mass_loss_final ~ landuse * litter_sp + (1|location),
-                         data=lml_2, na.action = "na.omit")
-simres <- simulateResiduals(two_way_lu_lq)
-plot(simres)
-emm <- emmeans(two_way_lu_lq, ~ landuse * litter_sp, type="response")
-(contrasts <- contrast(emm, "pairwise", simple="each") %>%
-     rbind()) %>% tidy()
-
-lu_lq <- lml_2 %>% group_by(litter_sp) %>%
-  ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
-  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
-  scale_fill_manual(labels=c("Food forest","Grassland")) + 
-  scale_fill_brewer(palette="Paired") +
-  scale_fill_manual(values=c("#33A02B","#FF7F00")) +
-  geom_point(position = position_jitterdodge(0.4), 
-             pch=16, color="black",show.legend = FALSE) +
-  # geom_text(data = threeway_cld, aes(x = landuse, y = upper.CL, label = .group)) +
-  facet_grid(~ litter_sp) +
-  theme_bw(base_size = 20) +
-  scale_x_discrete(labels=c("Food forest", "Grassland")) +
-  labs(y="Litter mass loss (%)", x="Land use", fill="Landuse")
-lu_lq
-
-two_way_lu_mesh <- lme4::lmer(litter_mass_loss_final ~ landuse * mesh_size + (1|location), data=lml_2, na.action = "na.omit")
-emm <- emmeans(two_way_lu_mesh, ~ landuse * mesh_size, type="response")
-(contrasts <- contrast(emm, "pairwise", simple="each") %>% rbind())
-
-lu_mesh <- lml_2 %>% group_by(mesh_size) %>%
-  ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
-  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
-  scale_fill_manual(labels=c("Food forest","Grassland")) + 
-  scale_fill_brewer(palette="Paired") +
-  scale_fill_manual(values=c("#33A02B","#FF7F00")) +
-  geom_point(position = position_jitterdodge(0.4), 
-             pch=16, color="black",show.legend = FALSE) +
-  # geom_text(data = threeway_cld, aes(x = landuse, y = upper.CL, label = .group)) +
-  facet_grid(~ mesh_size) +
-  theme_bw(base_size = 20) +
-  scale_x_discrete(labels=c("Food forest", "Grassland")) +
-  labs(y="Litter mass loss (%)", x="Land use", fill="Landuse")
-lu_mesh
-
-two_way_lp_mesh <- lme4::lmer(litter_mass_loss_final ~ litter_sp * mesh_size + (1|location), data=lml_2, na.action = "na.omit")
-emm <- emmeans(two_way_lp_mesh, ~ litter_sp * mesh_size, type="response")
-(contrasts <- contrast(emm, "pairwise",simple="each") %>% rbind())
-
-lp_mesh <- lml_2 %>% group_by(litter_sp) %>%
-  ggplot(aes(x=litter_sp, y=litter_mass_loss_final, fill=litter_sp)) +
-  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
-  # scale_fill_manual(labels=c("Food forest","Grassland")) + 
-  # scale_fill_brewer(palette="Paired") +
-  # scale_fill_manual(values=c("#33A02B","#FF7F00")) +
-  geom_point(position = position_jitterdodge(0.4), 
-             pch=16, color="black",show.legend = FALSE) +
-  # geom_text(data = threeway_cld, aes(x = landuse, y = upper.CL, label = .group)) +
-  facet_grid(~ mesh_size) +
-  theme_bw(base_size = 20) +
-  # scale_x_discrete(labels=c("Food forest", "Grassland")) +
-  labs(y="Litter mass loss (%)", x="Litter species", fill="Landuse")
-lp_mesh
-```
-
-```{r one way}
-one_way_lu <- lme4::lmer(litter_mass_loss_final ~ landuse + (1|location), data=lml_2, na.action = "na.omit")
-emm <- emmeans(one_way_lu, ~ landuse, type="response")
-(contrasts <- contrast(emm, "pairwise", simple="each") %>% rbind())
-
-one_way_litter <- lme4::lmer(litter_mass_loss_final ~ litter_sp + (1|location), data=lml_2, na.action = "na.omit")
-emm <- emmeans(one_way_litter, ~ litter_sp, type="response")
-(contrasts <- contrast(emm, "pairwise", simple="each") %>% rbind())
-
-one_way_mesh <- lme4::lmer(litter_mass_loss_final ~ mesh_size + (1|location), data=lml_2, na.action = "na.omit")
-emm <- emmeans(one_way_mesh, ~ mesh_size, type="response")
-(contrasts <- contrast(emm, "pairwise", simple="each") %>% rbind())
-```
-
 
 # Supplement
-
-## Correlation matrix variables  
-
-AMF positively correlated to pH, negatively to Olsen P, positively to springtails and negatively to oribatid mites. 
-
-All PLFA measures roughly similarly correlated to other variables. Negatively to bulk density and positively to moisture and nutrients. Also positively to earthworms and nematodes.  
-
-Earthworms positively correlated to almost everything except bulk density and mites and springtails.  
-
-```{r correlation matrix, fig.dim=c(12,12)}
-corr <- round(cor(mt_4 %>% dplyr::select(c('ph_kcl','som_percentage','b.d.','moisture_percentage', 'ec',
-            'Total_P_mg_kg','Olsen_P_mg_kg','C_total','N_total',
-            'Bacteria_total','Microbial','Actinobacteria_total','Fungi_total','Total_plfa','AMF_NLFA',
-            'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg',
-            'earthworms_2022','biomass_ew_total')),
-            use='pairwise.complete.obs'), 1)
-
-# automatic ggcorrplot
-# ggcorrplot(corr, method = "circle")
-
-# Get lower triangle of the correlation matrix
-  get_lower_tri<-function(corr){
-    corr[upper.tri(corr)] <- NA
-    return(corr)
-  }
-  # Get upper triangle of the correlation matrix
-  get_upper_tri <- function(corr){
-    corr[lower.tri(corr)]<- NA
-    return(corr)
-  }
-
-lower_tri <- get_lower_tri(corr)
-
-# more adjustable ggplot version
-ggplot(melt(lower_tri, na.rm=TRUE), aes(Var1, Var2, fill=value)) +
-  geom_tile(height=0.8, width=0.8) +
-  scale_fill_gradient2(low="blue", mid="white", high="red", limits=c(-1,1)) +
-  theme_minimal() +
-  coord_equal() +
-  labs(x="",y="",fill="Corr") +
-  theme(axis.text.x=element_text(size=18, angle=45, vjust=1, hjust=1, 
-                                 margin=margin(-3,0,0,0)),
-        axis.text.y=element_text(size=18, margin=margin(0,-3,0,0)),
-        panel.grid.major=element_blank(),
-        legend.justification = c(1, 0),
-        legend.position = c(0.6, 0.7),
-        legend.direction = "horizontal") +
-  geom_text(aes(Var1, Var2, label = value), color = "black", size = 4)
-
-ggsave("corrplot.png", width=10, height=10)
-
-# variables <- mt_4 %>% dplyr::select(c('landuse','ph_kcl','som_percentage','b.d.','moisture_percentage',
-#             'Total_P_mg_kg','Olsen_P_mg_kg','C_total','N_total',
-#             'Total_plfa','AMF_NLFA',
-#             'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg',
-#             'earthworms_2022'))
-# ggpairs(variables, ggplot2::aes(colour=landuse))
-
-
-``` 
 
 # PCA
 
@@ -760,248 +501,6 @@ char_div
 
 char_tab <- tidy(char_div) %>% flextable()
 char_tab
-
-```
-
-
-#multiple regression
-
-``` {r multiple regression}
-#Alder
-
-mr_alder <- lml %>% filter(litter_sp == "Alder" & mesh_size == "Coarse") %>%
-                  left_join(mt_4, by = "vb_code")
-
-# mult_regr_alder <- lm(litter_mass_loss_final ~ ph_kcl + b.d. + NH4_mg_kg + Olsen_P_mg_kg + biomass_ew_total + Springtails_nr_kg + mites_sum + Total_plfa + AMF_NLFA, data = mr_alder)
-# 
-# summary(mult_regr_alder)
-# 
-# stepAIC(mult_regr_alder, direction="both")
-
-#Hazel
-mr_hazel <- lml %>% filter(litter_sp == "Hazel" & mesh_size == "Coarse") %>%
-                  left_join(mt_4, by = "vb_code")
-
-# mult_regr_hazel <- lm(litter_mass_loss_final ~ ph_kcl + b.d. + NH4_mg_kg + Olsen_P_mg_kg + biomass_ew_total + Springtails_nr_kg + mites_sum + Total_plfa + AMF_NLFA, data = mr_hazel)
-# 
-# summary(mult_regr_hazel)
-# 
-# stepAIC(mult_regr_hazel, direction="both")
-
-#Chestnut
-mr_chestnut <- lml %>% filter(litter_sp == "Chestnut" & mesh_size == "Coarse") %>%
-                  left_join(mt_4, by = "vb_code")
-
-# mult_regr_chestnut <- lm(litter_mass_loss_final ~ ph_kcl + b.d. + NH4_mg_kg + Olsen_P_mg_kg + biomass_ew_total + Springtails_nr_kg + mites_sum + Total_plfa + AMF_NLFA, data = mr_chestnut)
-# 
-# summary(mult_regr_chestnut)
-# 
-# 
-# stepAIC(mult_regr_chestnut, direction="both")
-
-``` 
-
-
-``` {r pca including litter mass loss data}
-#PCA with litter mass loss coarse mesh size alder and earthworms and micro-arthropods
-mr_alder$loc_lu <-paste(mr_alder$location, mr_alder$landuse, sep="_")
-
-mr_alder_pca <- mr_alder %>% dplyr::select(c(landuse,location,loc_lu, litter_mass_loss_final, ph_kcl,moisture_percentage,som_percentage, b.d., NO2_NO3_mg_kg,
-                                     NH4_mg_kg,Total_P_mg_kg,Olsen_P_mg_kg,Total_plfa,AMF_NLFA,
-                                     Mites_oribatid_kg,Mites_oribatid_kg,Mites_other_kg,
-                                     Springtails_nr_kg,earthworms_2022,biomass_ew_total))
-
-colSums(is.na(mr_alder_pca))
-mr_alder_pca_nomiss <- na.omit(mr_alder_pca)
-colSums(is.na(mr_alder_pca_nomiss))
-
-mr_alder_pca_done <- mr_alder_pca_nomiss %>% dplyr::select(!c(landuse,location,loc_lu))
-
-pca_3 <- prcomp(mr_alder_pca_done, scale=TRUE)
-fviz_eig(pca_3)
-
-fviz_pca_ind(pca_3, label="none", habillage=mr_alder_pca_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) 
-
-fviz_pca_biplot(pca_3, label="var", habillage=mr_alder_pca_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom", ,text = element_text(size = 17))
-
-ggsave("pca_smallest.png", width=8, height=8)
-
-
-#PCA with litter mass loss coarse mesh size alder WITHOUT earthworms and micro-arthropods
-mr_alder_pca_wo <- mr_alder %>% dplyr::select(c(vb_code,landuse,location,loc_lu, litter_mass_loss_final, ph_kcl,moisture_percentage,som_percentage, b.d., 
-                                                NO2_NO3_mg_kg,NH4_mg_kg,Total_P_mg_kg,Olsen_P_mg_kg,Total_plfa,AMF_NLFA))
-mr_alder_pca_wo <- mr_alder_pca_wo %>% arrange(vb_code)
-
-
-colSums(is.na(mr_alder_pca_wo))
-mr_alder_pca_wo_nomiss <- na.omit(mr_alder_pca_wo)
-colSums(is.na(mr_alder_pca_wo_nomiss))
-
-mr_alder_pca_done_wo <- mr_alder_pca_wo_nomiss %>% dplyr::select(!c(vb_code,landuse,location,loc_lu))
-
-pca_4 <- prcomp(mr_alder_pca_done_wo, scale=TRUE)
-fviz_eig(pca_4)
-
-
-fviz_pca_ind(pca_4, label="none", habillage=mr_alder_pca_wo_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom",text = element_text(size = 17))
-
-fviz_pca_biplot(pca_4, label="var", habillage=mr_alder_pca_wo_nomiss$loc_lu, palette = "Paired", pointshape=16, mean.point = FALSE)  + xlim(-4,4) + ylim(-4,4) + theme(legend.position="bottom",text = element_text(size = 17))
-
-ggsave("pca_lml.png", width=8, height=8)
-
-ind_4 <- get_pca_ind(pca_4)
-PC1 <- ind_4$coord[,1]
-PC2 <- ind_4$coord[,2]
-``` 
-
-# Microbial and faunal effects
-
-``` {r faunal effect}
-lml_wide <- lml_2 %>% dplyr::select(-c("ff_code","treatment_code","litter_mass_loss","litter_mass_loss_G","notes")) %>% pivot_wider(names_from = c(mesh_size, litter_sp), values_from = litter_mass_loss_final)
-
-lml_wide <- lml_wide %>% arrange(vb_code)
-
-lml_wide <- lml_wide %>% mutate(alder_macro = Coarse_Alder-Medium_Alder,
-                    hazel_macro = Coarse_Hazel-Medium_Hazel,
-                    chestnut_macro = Coarse_Chestnut-Medium_Chestnut,
-                    alder_meso = Medium_Alder-Fine_Alder,
-                    hazel_meso = Medium_Hazel-Fine_Hazel,
-                    chestnut_meso = Medium_Chestnut-Fine_Chestnut)
-
-# filter out only the 4 subplots that have been used for the litter mass experiment
-mt_5 <- mt_4 %>% filter(plot_nr < 5)
-
-lml_wide <- left_join(lml_wide, mt_5, by = "vb_code")
-
-lml_wide <- lml_wide %>% mutate(sum_arthropods = Mites_oribatid_kg + Mites_other_kg + Springtails_nr_kg,
-                    sum_bact_fun = bact_total + Fungi_total)
-
-# PCA only litter mass loss samples
-# lml_wide <- lml_wide %>% filter(!grepl("VB002|VB116|VB118",vb_code)) #only use this if you want to plot the faunal effects against PC1/PC2
-
-# lml_wide_long <- lml_wide %>% pivot_longer(cols = c("alder_macro","hazel_macro","chestnut_macro","alder_meso","hazel_meso","chestnut_meso"), values_to="faunal_effect")
-
-lml_wide %>% ggplot(aes(x=sum_bact_fun, y=Fine_Alder)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-
-lml_wide %>% ggplot(aes(x=sum_bact_fun)) + 
-  geom_point(aes(y=Fine_Alder), color="#66c2a5", size=3) + stat_smooth(aes(y=Fine_Alder),method="lm", se=FALSE, color="#66c2a5") + 
-            geom_text(x = 45, y = 75, label="R2 adjusted = 0.08, p = 0.084", color="#66c2a5", size=5) +
-  geom_point(aes(y=Fine_Hazel), color="#fc8d62", size=3) +
-  geom_point(aes(y=Fine_Chestnut), color="#8da0cb", size=3) +
-  ylab("Fine mesh size Litter mass loss (%)") + 
-  xlab("Bacterial and fungal biomass (µg/g)")
-
-ggsave("microbial_effect.png", height=8, width=8)
-
-lml_wide %>% ggplot(aes(x=sum_arthropods, y=alder_meso)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-lml_wide %>% ggplot(aes(x=sum_arthropods, y=hazel_meso)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-lml_wide %>% ggplot(aes(x=sum_arthropods, y=chestnut_meso)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-
-lml_wide %>% ggplot(aes(x=sum_arthropods)) + 
-  geom_hline(yintercept=0) +
-  geom_point(aes(y=alder_meso), color="#66c2a5", size=3) + stat_smooth(aes(y=alder_meso),method="lm", se=FALSE, color="#66c2a5") + 
-            geom_text(x = 2400, y = 35, label="R2 adjusted = 0.21, p = 0.056", color="#66c2a5", size=5) +
-  geom_point(aes(y=hazel_meso), color="#fc8d62", size=3) + stat_smooth(aes(y=hazel_meso),method="lm", se=FALSE, color="#fc8d62") +
-  geom_point(aes(y=chestnut_meso), color="#8da0cb", size=3) + stat_smooth(aes(y=chestnut_meso),method="lm", se=FALSE, color="#8da0cb") +
-  ylab("Mesofaunal effect (Δ percent points)") + 
-  xlab("Micro-arthropod abundance") 
-
-ggsave("mesofaunal_effect.png", height=8, width=8)
-
-lml_wide %>% ggplot(aes(x=biomass_ew_total, y=alder_macro)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-lml_wide %>% ggplot(aes(x=biomass_ew_total, y=hazel_macro)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-lml_wide %>% ggplot(aes(x=biomass_ew_total, y=chestnut_macro)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-
-lml_wide %>% ggplot(aes(x=biomass_ew_total)) + 
-  geom_hline(yintercept=0) +
-  geom_point(aes(y=alder_macro), color="#66c2a5", size=3) +
-  geom_point(aes(y=hazel_macro), color="#fc8d62", size=3) + 
-  geom_point(aes(y=chestnut_macro), color="#8da0cb", size=3) + geom_smooth(aes(y=chestnut_macro),method="lm", se=FALSE, color="#8da0cb") +
-            geom_text(x = 280, y = -28, label="R2 adjusted = 0.26, p = 0.036", color="#8da0cb", size=5) +
-  ylab("Macrofaunal effect (Δ percent point)") + 
-  xlab("Earthworm biomass") 
-  
-ggsave("macrofaunal_effect.png", height=8, width=8)
-
-
-# lml_wide %>% ggplot(aes(x=PC1)) + 
-#   geom_point(aes(y=alder_faunal), color="#66c2a5", size=3) + geom_smooth(aes(y=alder_faunal),method="lm", se=FALSE, color="#66c2a5") +
-#   geom_point(aes(y=hazel_faunal), color="#fc8d62", size=3) + geom_smooth(aes(y=hazel_faunal),method="lm", se=FALSE, color="#fc8d62") +
-#   geom_point(aes(y=chestnut_faunal), color="#8da0cb", size=3) + geom_smooth(aes(y=chestnut_faunal),method="lm", se=FALSE, color="#8da0cb") +
-#   ylab("Faunal effect (%)") + 
-#   xlab("PC1") 
-  
-# ggsave("faunal_effect_pc1.png", height=8, width=8)  
-# 
-# lml_wide %>% ggplot(aes(x=PC2)) + 
-#   geom_point(aes(y=alder_faunal), color="#66c2a5", size=3) + geom_smooth(aes(y=alder_faunal),method="lm", se=FALSE, color="#66c2a5") +
-#   geom_point(aes(y=hazel_faunal), color="#fc8d62", size=3) + geom_smooth(aes(y=hazel_faunal),method="lm", se=FALSE, color="#fc8d62") +
-#   geom_point(aes(y=chestnut_faunal), color="#8da0cb", size=3) + geom_smooth(aes(y=chestnut_faunal),method="lm", se=FALSE, color="#8da0cb") +
-#   ylab("Faunal effect (%)") + 
-#   xlab("PC2") 
-#   
-# ggsave("faunal_effect_pc2.png", height=8, width=8)  
-
-```
-``` {r faunal effect in percentage}
-lml_wide_p <- lml_2 %>% dplyr::select(-c("ff_code","treatment_code","litter_mass_loss","litter_mass_loss_G","notes")) %>% pivot_wider(names_from = c(mesh_size, litter_sp), values_from = litter_mass_loss_final)
-
-lml_wide_p <- lml_wide_p %>% arrange(vb_code)
-
-lml_wide_p <- lml_wide_p %>% mutate(alder_macro_p = ((Coarse_Alder/Medium_Alder)-1)*100,
-                    hazel_macro_p = ((Coarse_Hazel/Medium_Hazel)-1)*100,
-                    chestnut_macro_p = ((Coarse_Chestnut/Medium_Chestnut)-1)*100,
-                    alder_meso_p = ((Medium_Alder/Fine_Alder)-1)*100,
-                    hazel_meso_p = ((Medium_Hazel/Fine_Hazel)-1)*100,
-                    chestnut_meso_p = ((Medium_Chestnut/Fine_Chestnut)-1)*100)
-
-# filter out only the 4 subplots that have been used for the litter mass experiment
-mt_5 <- mt_4 %>% filter(plot_nr < 5)
-
-lml_wide_p <- left_join(lml_wide_p, mt_5, by = "vb_code")
-
-lml_wide_p <- lml_wide_p %>% mutate(sum_arthropods = Mites_oribatid_kg + Mites_other_kg + Springtails_nr_kg,
-                    sum_bact_fun = bact_total + Fungi_total)
-
-# PCA only litter mass loss samples
-# lml_wide <- lml_wide %>% filter(!grepl("VB002|VB116|VB118",vb_code)) #only use this if you want to plot the faunal effects against PC1/PC2
-
-# lml_wide_long <- lml_wide %>% pivot_longer(cols = c("alder_macro","hazel_macro","chestnut_macro","alder_meso","hazel_meso","chestnut_meso"), values_to="faunal_effect")
-
-lml_wide_p %>% ggplot(aes(x=sum_arthropods, y=alder_meso_p)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-lml_wide_p %>% ggplot(aes(x=sum_arthropods, y=hazel_meso_p)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-lml_wide_p %>% ggplot(aes(x=sum_arthropods, y=chestnut_meso_p)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-
-lml_wide_p %>% ggplot(aes(x=sum_arthropods)) + 
-  geom_hline(yintercept=0) +
-  geom_point(aes(y=alder_meso_p), color="#66c2a5", size=3) + stat_smooth(aes(y=alder_meso_p),method="lm", se=FALSE, color="#66c2a5") + 
-            geom_text(x = 2400, y = 50, label="R2 adjusted = 0.15, p = 0.091", color="#66c2a5", size=5) +
-  geom_point(aes(y=hazel_meso_p), color="#fc8d62", size=3) + stat_smooth(aes(y=hazel_meso_p),method="lm", se=FALSE, color="#fc8d62") +
-  geom_point(aes(y=chestnut_meso_p), color="#8da0cb", size=3) + stat_smooth(aes(y=chestnut_meso_p),method="lm", se=FALSE, color="#8da0cb") +
-  ylab("Mesofaunal effect (%)") + 
-  xlab("Micro-arthropod abundance") +
-  ylim(-75,125)
-
-ggsave("mesofaunal_effect_p.png", height=8, width=8)
-
-lml_wide_p %>% ggplot(aes(x=biomass_ew_total, y=alder_macro_p)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-lml_wide_p %>% ggplot(aes(x=biomass_ew_total, y=hazel_macro_p)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-lml_wide_p %>% ggplot(aes(x=biomass_ew_total, y=chestnut_macro_p)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-
-lml_wide_p %>% ggplot(aes(x=earthworms_2022, y=alder_macro_p)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-lml_wide_p %>% ggplot(aes(x=earthworms_2022, y=hazel_macro_p)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-lml_wide_p %>% ggplot(aes(x=earthworms_2022, y=chestnut_macro_p)) + geom_point() + stat_poly_line() + stat_poly_eq(use_label(c("adj.R2","p"))) # to get R2 and p
-
-lml_wide_p %>% ggplot(aes(x=biomass_ew_total)) + 
-  geom_hline(yintercept=0) +
-  geom_point(aes(y=alder_macro_p), color="#66c2a5", size=3) +
-  geom_point(aes(y=hazel_macro_p), color="#fc8d62", size=3) +
-  geom_point(aes(y=chestnut_macro_p), color="#8da0cb", size=3) +
-  ylab("Macrofaunal effect (%)") + 
-  xlab("Earthworm biomass") +
-  ylim(-100,350)
-  
-ggsave("macrofaunal_effect_p.png", height=8, width=8)
 
 ```
 
