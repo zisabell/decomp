@@ -35,6 +35,7 @@ library(vegan)
 library(lme4)
 library(glmmTMB)
 library(DHARMa)
+library(ggbeeswarm)
 ```
 
 ``` {r upload and mutate files}
@@ -355,12 +356,12 @@ ggsave(file="3x3plot_no_letters.png", plot=image, width=10, height=10)
 #take NAs out
 lml_3 <- filter(lml_2, !is.na(litter_mass_loss_final))
 #transform data necessary for different models
-lml_3 <- lml_3 %>% mutate(litter_mass_loss_final = ifelse(litter_mass_loss_final > 1,
-                                                         1, litter_mass_loss_final))
-lml_3$litter_mass_loss_final_no_0_1 <- pmin(pmax(lml_3$litter_mass_loss_final, 
-                                                 0.0001), 0.9999)
-lml_3$logit_mass_loss <- log(lml_3$litter_mass_loss_final_no_0_1 /
-                               (1 - lml_3$litter_mass_loss_final_no_0_1))
+# lml_3 <- lml_3 %>% mutate(litter_mass_loss_final = ifelse(litter_mass_loss_final > 1,
+#                                                          1, litter_mass_loss_final))
+# lml_3$litter_mass_loss_final_no_0_1 <- pmin(pmax(lml_3$litter_mass_loss_final, 
+#                                                  0.0001), 0.9999)
+# lml_3$logit_mass_loss <- log(lml_3$litter_mass_loss_final_no_0_1 /
+#                                (1 - lml_3$litter_mass_loss_final_no_0_1))
 
 #different models
 three_way_gauss <- glmmTMB(litter_mass_loss_final ~ landuse * litter_sp * mesh_size 
@@ -385,7 +386,7 @@ three_way_beta <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp *
 
 anova(three_way_gauss_disp, three_way_gauss) #beta is best, gaussian with dispersion is also good
 simres <- simulateResiduals(three_way_gauss_disp)
-plot(simres) 
+plot(simres) #no severe issues
 plotResiduals(simres, lml_3$mesh_size)
 emmip(three_way_gauss_disp, landuse ~ litter_sp | mesh_size )
 emm <- emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, type="response")
@@ -393,16 +394,31 @@ emm %>% tidy()
 joint_tests(three_way_gauss_disp) %>% flextable()
 (contrasts <- contrast(emm, "pairwise", simple="each", combine = TRUE, adjust="Sidak"))
 # confint(contrasts)# confint(contrasts)tidy()
-three_way_cld <- cld(emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, adjust="sidak"), Letters = c(letters))
+three_way_cld <- cld(emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, adjust="Tukey"), Letters = letters)
 
 # Plot the outcomes
-image <- lml_3 %>% group_by(mesh_size, litter_sp) %>%
-  ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse)) +
-  geom_boxplot(outlier.shape = NA, alpha=0.8, show.legend = FALSE) +
-  scale_fill_manual(values=c("#33A02B","#FF7F00"),
+image <- lml_3 %>%
+  ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse, color=landuse)) +
+  geom_boxplot(outlier.shape = NA, alpha=0.5, show.legend = FALSE, width=0.5) +
+  scale_fill_manual(values=c("#E1BE6A","#40B0A6"),
                     labels=c("Food forest","Grassland")) + 
-  geom_point(position = position_jitterdodge(0.4), 
-             pch=16, color="black",show.legend = FALSE) +
+  scale_color_manual(values=c("#E1BE6A","#40B0A6"),
+                    labels=c("Food forest","Grassland")) + 
+  # geom_point(aes(color=landuse),position = position_jitterdodge(0.4), 
+  #            pch=16, show.legend = FALSE) +
+  geom_beeswarm(aes(color = landuse), dodge.width = 1, cex = 2.5, show.legend = FALSE) +
+  geom_point(
+    data = three_way_cld,
+    aes(y = emmean, x = landuse),
+    size = 2,
+    color = "black"
+  ) +
+    geom_errorbar(
+    data = three_way_cld,
+    aes(y=emmean, ymin = lower.CL, ymax = upper.CL, x = landuse),
+    width = 0,
+    color = "black"
+  ) +
   geom_text(data = three_way_cld, aes(x = landuse, y = upper.CL, label = .group)) +
   facet_grid(litter_sp ~ mesh_size) +
   theme_bw(base_size = 20) +
@@ -410,6 +426,87 @@ image <- lml_3 %>% group_by(mesh_size, litter_sp) %>%
   labs(y="Litter mass loss", x="Land use", fill="Landuse")
 image
 ggsave(file="3x3plot_new_letters.png", plot=image, width=10, height=10)
+```
+
+```{r three way NEW LMLLLLLL}
+#take NAs out
+lml_3 <- filter(lml_2, !is.na(litter_mass_loss_final_3))
+#transform data necessary for different models
+# lml_3 <- lml_3 %>% mutate(litter_mass_loss_final = ifelse(litter_mass_loss_final > 1,
+#                                                          1, litter_mass_loss_final))
+# lml_3$litter_mass_loss_final_no_0_1 <- pmin(pmax(lml_3$litter_mass_loss_final, 
+#                                                  0.0001), 0.9999)
+# lml_3$logit_mass_loss <- log(lml_3$litter_mass_loss_final_no_0_1 /
+#                                (1 - lml_3$litter_mass_loss_final_no_0_1))
+
+#different models
+three_way_gauss <- glmmTMB(litter_mass_loss_final ~ landuse * litter_sp * mesh_size 
+                               + (1|location), family=gaussian(), 
+                           data=lml_3, na.action="na.omit")
+# three_way_gauss_logit <- glmmTMB(logit_mass_loss ~ landuse * litter_sp * mesh_size 
+#                                + (1|location), family=gaussian(), 
+#                                data=lml_3, na.action="na.omit") #TERRIBLE
+three_way_gauss_disp <- glmmTMB(litter_mass_loss_final_3 ~ landuse * litter_sp * 
+                                  mesh_size + (1|location), 
+                               family=gaussian, dispformula = ~ litter_sp,
+                        data=lml_3, na.action="na.omit")
+# three_way_gauss_arcsin <- lmer(asin(sqrt(litter_mass_loss_final)) ~ 
+#                                  landuse * litter_sp * mesh_size 
+#                                + (1|location), data=lml_3, na.action="na.omit")
+three_way_beta <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp *
+                            mesh_size + (1|location), beta_family(), 
+                          dispformula = ~ litter_sp, data=lml_3, na.action="na.omit")
+# three_way_zi <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp * mesh_size 
+#                      + (1|location), beta_family(), ziformula = ~1, 
+#                      data=lml_3, na.action="na.omit")
+
+summary(three_way_gauss_disp)
+anova(three_way_gauss_disp, three_way_gauss) #beta is best, gaussian with dispersion is also good
+simres <- simulateResiduals(three_way_gauss_disp)
+plot(simres) #no severe issues
+plotResiduals(simres, lml_3$mesh_size)
+emmip(three_way_gauss_disp, landuse ~ litter_sp | mesh_size )
+emm <- emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, type="response")
+emm_tidy <- emm %>% tidy()
+emm_lu <- emmeans(three_way_gauss_disp, pairwise ~ landuse | litter_sp | mesh_size, type="response")
+emm_lu
+joint_tests(three_way_gauss_disp) %>% flextable()
+(contrasts <- contrast(emm, "pairwise", simple="each", combine = TRUE, adjust="Tukey"))
+# confint(contrasts)# confint(contrasts)tidy()
+three_way_cld <- cld(emmeans(three_way_gauss_disp, ~ landuse * litter_sp * mesh_size, adjust="tukey"), Letters = letters)
+three_way_cld
+
+# Plot the outcomes
+image <- lml_3 %>% group_by(mesh_size, litter_sp) %>%
+  ggplot(aes(x=landuse, y=litter_mass_loss_final_3, fill=landuse, color=landuse)) +
+  geom_boxplot(outlier.shape = NA,color = NA, alpha=0.4, show.legend = FALSE) +
+  scale_fill_manual(values=c("#56B4E9", "#D55E00" ),
+                    labels=c("Food forest","Grassland")) + 
+  scale_color_manual(values=c("#56B4E9", "#D55E00" ),
+                    labels=c("Food forest","Grassland")) +
+  # geom_point(position = position_jitterdodge(0.4), 
+  #            pch=16, color="black",show.legend = FALSE) + 
+  geom_beeswarm(aes(color = landuse), dodge.width = 1, cex = 3, pch=19, show.legend = FALSE) +
+  geom_point(
+    data = three_way_cld,
+    aes(y = emmean, x = landuse),
+    size = 3,
+    color = "black"
+  ) +
+    geom_errorbar(
+    data = three_way_cld,
+    aes(y=emmean, ymin = lower.CL, ymax = upper.CL, x = landuse),
+    width = 0,
+    color = "black"
+  ) +
+  geom_text(data = three_way_cld, aes(x = landuse, y = upper.CL, label = .group)) +
+  facet_grid(litter_sp ~ mesh_size) +
+  theme_bw(base_size = 20) +
+  scale_x_discrete(labels=c("Food forest", "Grassland")) +
+  labs(y="Litter mass loss", x="Land use", fill="Landuse")
+image
+ggsave(file="3x3plot_new_letters.png", plot=image, width=10, height=10)
+ggsave(file="LML_final.svg", width=10, height=10)
 ```
 
 
