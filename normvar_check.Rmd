@@ -430,7 +430,7 @@ qqPlot(residuals(mod_log_CN))
 shapiro.test(residuals(mod_log_CN))
 anova(mod_log_CN)
 emm <- emmeans(mod_log_CN, ~landuse)
-contrasts <- contrast(emm, method= "pairwise", type="response")
+contrasts <- contrast(regrid(emm, "log"), method= "pairwise", type="response")
 contrasts
 ```
 **C total conclusion:**  
