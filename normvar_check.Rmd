@@ -53,7 +53,7 @@ mt_4 <- cbind(mt_4, biomass_ew_total =
 
 # sum bacteria + actinos
 mt_4 <- cbind(mt_4, bact_total = rowSums(mt_4[c("Bacteria_total","Actinobacteria_total")]))
-
+mt_4$CN <- mt_4$C_total/mt_4$N_total
 ```
 ## normality and variances
 
@@ -65,7 +65,7 @@ vars <- mt_4 %>%
             Total_P_mg_kg, Olsen_P_mg_kg, earthworms_2022, biomass_ew_total,
             Springtails_nr_kg, Mites_oribatid_kg, Mites_other_kg, nr_nematodes_gr_dry,
             Bacteria_total, bact_total, Microbial, Actinobacteria_total, Fungi_total, Total_plfa, AMF_NLFA,
-            C_total, N_total, P_total, bact_total) %>%
+            C_total, N_total, P_total, bact_total, CN) %>%
   names() %>%
   set_names()
 
@@ -101,7 +101,8 @@ for (i in c('ph_kcl','som_percentage','b.d.','moisture_percentage', 'ec', 'NO2_N
             'Total_P_mg_kg','Olsen_P_mg_kg','C_total','N_total','P_total',
             'earthworms_2022','biomass_ew_total',
             'Springtails_nr_kg','Mites_oribatid_kg','Mites_other_kg','nr_nematodes_gr_dry',
-            'Bacteria_total','Microbial','Actinobacteria_total','Fungi_total','Total_plfa','AMF_NLFA', 'bact_total')) {
+            'Bacteria_total','Microbial','Actinobacteria_total','Fungi_total','Total_plfa','AMF_NLFA', 'bact_total', 
+            'CN')) {
   f <- formula(paste(i,"~ landuse + (1|location)"))
   models[[i]] <- lmerTest::lmer(f, data=mt_4, na.action = "na.omit")
 }
@@ -403,6 +404,34 @@ mod_log_C <- lmerTest::lmer(log(C_total+0.001) ~ landuse + (1|location), data=mt
 qqPlot(residuals(mod_log_C))
 shapiro.test(residuals(mod_log_C)) # Non-normality fixed!!!!
 anova(mod_log_C)
+```
+**C total conclusion:**  
+
+Log transformation fixes non-normality.
+
+- p-value = `r anova(mod_log_C)$'Pr(>F)'`  
+- F-value = `r anova(mod_log_C)$'F value'`  
+
+### CN
+
+``` {R data check CN, fig.dim=c(3,5)}
+mt_4 %>% group_by(landuse, location) %>% summarize(mean=mean(CN),sd=sd(CN),var=var(CN))
+variances_loc_lu$CN #no equal variance
+mt_4 %>% group_by(landuse) %>% ggplot(aes(x=landuse, y=CN, color=landuse)) + geom_boxplot() + theme(legend.position='none')
+plot(models$CN)
+qqPlot(residuals(models$CN))
+shapiro.test(residuals(models$CN)) #normal
+
+# Log transformation FIXED!!
+var_log_CN <- leveneTest(log(CN) ~ landuse * location, data=mt_4) #fixed!
+mod_log_CN <- lmerTest::lmer(log(CN+0.001) ~ landuse + (1|location), data=mt_4,
+                  na.action = "na.omit")
+qqPlot(residuals(mod_log_CN))
+shapiro.test(residuals(mod_log_CN))
+anova(mod_log_CN)
+emm <- emmeans(mod_log_CN, ~landuse)
+contrasts <- contrast(emm, method= "pairwise", type="response")
+contrasts
 ```
 **C total conclusion:**  
 
