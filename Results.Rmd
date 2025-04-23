@@ -339,7 +339,7 @@ three_way_gauss_disp <- glmmTMB(litter_mass_loss_final ~ landuse * litter_sp *
 #                      + (1|location), beta_family(), ziformula = ~1, 
 #                      data=lml_3, na.action="na.omit")
 
-anova(three_way_gauss_disp, three_way_gauss) #beta is best, gaussian with dispersion is also good
+# anova(three_way_gauss_disp, three_way_gauss) #beta is best, gaussian with dispersion is also good
 simres <- simulateResiduals(three_way_gauss_disp)
 plot(simres) #no severe issues
 plotResiduals(simres, lml_3$mesh_size)
@@ -363,7 +363,7 @@ ggplot(emm_df, aes(x = landuse, y = emmean, color = litter_sp, group = litter_sp
 # Plot the outcomes
 image <- lml_3 %>%
   ggplot(aes(x=landuse, y=litter_mass_loss_final, fill=landuse, color=landuse)) +
-  geom_boxplot(outlier.shape = NA, alpha=0.5, show.legend = FALSE, width=0.5) +
+  geom_boxplot(coef=0, outlier.shape = NA, alpha=0.5, show.legend = FALSE, width=0.5) +
   scale_fill_manual(values=c("#56B4E9", "#D55E00" ),
                     labels=c("Food forest","Grassland")) + 
   scale_color_manual(values=c("#56B4E9", "#D55E00" ),
