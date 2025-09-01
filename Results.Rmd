@@ -9,29 +9,13 @@ knitr::opts_chunk$set(message = FALSE, echo = FALSE, warning = FALSE)
 ```
 
 ``` {r package}
-# library(Rmisc)
 library(tidyverse)
-# library(kableExtra)
 library(flextable)
-# library(ggpubr)
-# library(rstatix)
-# library(readxl)
-# library(writexl)
 library(car)
-# library(wesanderson)
 library(multcomp)
-# library(multcompView)
 library(emmeans)
-# library(broom)
-# library(broom.mixed)
-# library(ggcorrplot)
-# library(reshape2)
-# library(lmerTest)
 library(factoextra)
 library(vegan)
-# library(GGally)
-# library(ggpmisc)
-# library(RColorBrewer)
 library(lme4)
 library(glmmTMB)
 library(DHARMa)
@@ -43,7 +27,6 @@ lml <- read_csv2("MASTER_LML.csv")
 
 lml$litter_sp <- factor(lml$litter_sp, levels=c("Alder","Hazel","Chestnut"))
 lml$mesh_size <- factor(lml$mesh_size, levels=c("Fine","Medium","Coarse"))
-# lml <- lml %>% mutate(litter_mass_loss_final = litter_mass_loss_final*100)
 
 mt <- read_csv2("MASTERFILE_decomp_10.csv")
 cnp <- read_csv("CNP_data.csv")
@@ -54,8 +37,8 @@ litter_lignin <- litter_lignin %>% dplyr::rename("lignin" = "lignin (mg/g)")
 
 mt_1 <- mt %>% left_join(cnp, by="code")
 
-mt_2 <- mt_1 %>% mutate(age = 2021-year_of_landuse,
-                      earthworms_2021 = compost_worms + soil_eating_worms + pendelaars)
+# mt_2 <- mt_1 %>% mutate(age = 2021-year_of_landuse,
+#                       earthworms_2021 = compost_worms + soil_eating_worms + pendelaars)
 
 mt_2 <- mt_2 %>% rowwise() %>% dplyr::mutate(earthworms_2022 = sum(dplyr::c_across(contains("Abundance")))*10)
 mt_2 <- mt_2 %>% dplyr::rename("vb_code" = "code")
@@ -91,8 +74,6 @@ lml_mt <- lml_2 %>% left_join(mt_4, by ="vb_code")
 
 ## Soil characteristics  
 When comparing soil characteristics between food forests and grasslands significant differences were found with higher moisture and soil organic matter content, lower bulk density, higher oribatid and other (mesostigmatic and prostigmatic) mite abundance for food forests, but significantly higher earthworm abundance and biomass and higher AMF biomass for grasslands. No significant differences were found for pH, nutrient concentrations (C, N, P), springtail abundance and fungal (non-AMF), bacterial, actinobacterial, general microbial biomass and total microbial biomass (table 1). 
-
-<!-- Average AMF biomass in grassland was `r format(mt_4 %>% filter(landuse == "Grassland") %>% summarize(mean = mean(AMF_NLFA, na.rm=TRUE)), digits=2)` ug/gr. (example) -->
 
 ``` {r table}
 #This code can go out here because it's in norvar_check?:
@@ -139,15 +120,6 @@ tab <- mt_wide %>% group_by(landuse, category, measurement) %>%
   unite("value",mean, sd, sep=" ") %>%
   arrange(factor(measurement, levels = tab_order)) %>%
   pivot_wider(names_from=landuse, values_from=value)
-
-# #alternative way
-# x <- mt_wide %>% group_by(landuse, category, measurement) %>% 
-#   summarise(
-#     across(.cols = 'value',
-#            .fns = list(
-#              mean = ~ mean(.x, na.rm = TRUE),
-#              sd = ~ sd(.x, na.rm = TRUE)
-#            )), .groups = "drop")
 
 tab %>% 
   flextable() %>% 
@@ -227,15 +199,8 @@ cld(emmeans(n.lm,~ litter_species,adjust="tukey"), Letters = c(letters))
 ```
 
 ## Litter mass loss data  
-An interaction between land use, litter species and mesh size was observed for litter mass loss in coarse chestnut litter bags in grassland sites. Litter mass loss was lowest here. 
-Litter mass loss was highest for hazel with medium and coarse mesh size and alder with the coarse mesh size. Medium levels of litter mass loss were found for hazel with fine mesh size and alder with fine and medium mesh size. Lowest levels of litter mass loss found for chestnut leaves for all mesh sizes. Effect of land use clear for alder with the coarse mesh size. Higher values were found in grasslands than food forests. 
 
 ``` {r statistics litter mass loss, fig.dim = c(10,8)}
-
-# Descriptive statistics
-# summarySE(lml_2, measurevar="litter_mass_loss_final", na.rm=TRUE) # for overall summary
-# summarySE(lml_2, measurevar="litter_mass_loss_final", groupvars=c("landuse"), na.rm=TRUE)
-
 # Levene's test for homogeneity of variances
 lml_2 %>% group_by(landuse, location, litter_sp, mesh_size) %>%
           summarize(mean=mean(litter_mass_loss_final, na.rm=TRUE),
@@ -315,31 +280,17 @@ lml_3 <- filter(lml_2, !is.na(litter_mass_loss_final))
 #                                                          1, litter_mass_loss_final))
 # lml_3$litter_mass_loss_final_no_0_1 <- pmin(pmax(lml_3$litter_mass_loss_final, 
 #                                                  0.0001), 0.9999)
-# lml_3$logit_mass_loss <- log(lml_3$litter_mass_loss_final_no_0_1 /
-#                                (1 - lml_3$litter_mass_loss_final_no_0_1))
 
 #different models
 # three_way_gauss <- glmmTMB(litter_mass_loss_final ~ landuse * litter_sp * mesh_size 
 #                                + (1|location), family=gaussian(), 
 #                            data=lml_3, na.action="na.omit")
-# three_way_gauss_logit <- glmmTMB(logit_mass_loss ~ landuse * litter_sp * mesh_size 
-#                                + (1|location), family=gaussian(), 
-#                                data=lml_3, na.action="na.omit") #TERRIBLE
 three_way_gauss_disp <- glmmTMB(litter_mass_loss_final ~ landuse * litter_sp * 
                                   mesh_size + (1|location), 
                                family=gaussian, dispformula = ~ litter_sp,
                         data=lml_3, na.action="na.omit")
-# three_way_gauss_arcsin <- lmer(asin(sqrt(litter_mass_loss_final)) ~ 
-#                                  landuse * litter_sp * mesh_size 
-#                                + (1|location), data=lml_3, na.action="na.omit")
-# three_way_beta <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp *
-#                             mesh_size + (1|location), beta_family(), 
-#                           dispformula = ~ litter_sp, data=lml_3, na.action="na.omit")
-# three_way_zi <- glmmTMB(litter_mass_loss_final_no_0_1 ~ landuse * litter_sp * mesh_size 
-#                      + (1|location), beta_family(), ziformula = ~1, 
-#                      data=lml_3, na.action="na.omit")
 
-# anova(three_way_gauss_disp, three_way_gauss) #beta is best, gaussian with dispersion is also good
+# anova(three_way_gauss_disp, three_way_gauss) #gaussian with dispersion is better
 simres <- simulateResiduals(three_way_gauss_disp)
 plot(simres) #no severe issues
 plotResiduals(simres, lml_3$mesh_size)
@@ -406,7 +357,7 @@ mt_4_pca <- mt_4 %>% dplyr::select(c(landuse,location,loc_lu,ph_kcl,moisture_per
                                      Springtails_nr_kg,earthworms_2022,biomass_ew_total))
 
 colSums(is.na(mt_4_pca))
-mt_4_pca_nomiss <- na.omit(mt_4_pca) # 3 plots only for which there is earthworm and arthropod data
+mt_4_pca_nomiss <- na.omit(mt_4_pca) # 3 plots per site only for which there is earthworm and arthropod data
 colSums(is.na(mt_4_pca_nomiss))
 
 mt_4_pca_done <- mt_4_pca_nomiss %>% dplyr::select(!c(landuse,location,loc_lu))
@@ -445,7 +396,6 @@ ggsave("pca_small_.svg")
 ``` 
 
 ``` {r PCA 2}
-
 # PCA without earthworms + micro-arthropods
 
 mt_4_pca_big <- mt_4 %>% dplyr::select(c(ph_kcl,moisture_percentage,som_percentage, b.d.,ec,
