@@ -1,0 +1,70 @@
+File: MASTER_LML;
+;
+vb_code;Code to match with soil properties
+ff_code;Alternative code (used in this specific experiment)
+treatment_code;Code for combination of litter species and mesh size
+litter_sp;Litter species
+mesh_size;Mesh size
+litter_mass_loss_final;Proportion of litter mass lost during experiment
+notes;Notes on missing data
+;
+File: CNP_data;
+;
+code;Code
+C_total;Total C (%)
+N_total;Total N (%)
+P_total;Total P (mg/kg)
+;
+File: litter_cn;
+;
+litter_species;Litter species
+code;Code of lab replicates
+ug;Total volume measured
+n_ug;N (ug)
+c_ug;C (ug)
+n_proc;N (%)
+c_proc;C (%)
+cn_ratio;C:N ratio
+;
+File: litter_lignin;
+;
+litter_species;Litter species
+code;Code of lab replicates
+lignin (mg/g);Lignin (mg/kg)
+;
+File: Soilprop_decomp;
+;
+code;Code
+plot_nr;Plot nummer per site
+location;Location
+landuse;Land use type
+year_of_landuse;Start of land use (if known)
+soil_type_map;Soil texture category from soil map
+date;Sampling date
+time;Sampling time
+lat_dec;Sampling plot coordinate latitude (decimal degree, rounded to 2 decimals)
+long_dec;Sampling plot coordinate longitude (decimal degree, rounded to 2 decimals)
+ec;Electrical conductivity (mS/m)
+ph_kcl;pH (KCl)
+moisture_percentage;Soil moisture content (%)
+som_percentage;Soil organic matter content (%)
+b.d.;Bulk density (g/cm3)
+Total_P_mg_kg;Total P (mg/kg)
+Olsen_P_mg_kg;Olsen P (mg/kg)
+Bacteria_total;Total bacterial biomass (ug/g)
+Microbial;Total microbial biomass (ug/g)
+Actinobacteria_total;Actinobacterial biomass (ug/g)
+Fungi_total;Total fungal biomass (ug/g)
+Total_plfa;Total PLFA biomass( ug/g)
+AMF_NLFA;Total AMF biomas (ug/g)
+Mites_oribatid_kg;Total oribatid mites (#/kg)
+Mites_other_kg;Total other mites (#/kg)
+Springtails_nr_kg;Total springtails (#/kg)
+Abundance_anecic;Abundance anecic earthworms (#/m2)
+Abundance_endogeic;Abundance endogeic earthworms (#/m2)
+Abundance_epigeic;Abundance epigeic earthworms (#/m2)
+Abundance_juvenile;Abundance juvenile earthworms (#/m2)
+Biomass_anecic;Biomass anecic earthworms (#/m2)
+Biomass_endogeic;Biomass endogeic earthworms (g/m2)
+Biomass_epigeic;Biomass epigeic earthworms (g/m2)
+Biomass_juvenile;Biomass juvenile earthworms (g/m2)

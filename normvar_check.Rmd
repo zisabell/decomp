@@ -719,10 +719,3 @@ plot(simres) #looks much better!
 **Total AMF (NLFA) conclusion:**  
 Non-equal variances (p=`r variances_loc_lu$AMF_NLFA$"Pr(>F)"[1]`), non-normal residuals with shapiro. 
 Log transforming AMF data makes unequal variances a bit less extreme (p=`r var_log_amf$"Pr(>F)"[1]`) but still significant. 
-
-
-``` {r citations}
-citation("lmerTest")
-
-
-```
