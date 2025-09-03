@@ -1,3 +1,13 @@
+General info;
+A short-term litter bag experiment performed in autumn of 2021 in four paired food forest and grassland sites with litter bags with varying mesh sizes (fine (100 ?m), medium (1 mm), coarse (1mm + 5 mm holes). ;
+Tree litter types were used: black alder, common hazel and sweet chestnut. These species are common in the netherlands and in food forests.;
+Litter quality was verified by measuring litter C, N and lignin content (litter_cn and litter_lignin).;
+In the plots of the litter bag experiment we also collected soil physicochemical data in the summer of 2021 (CNP_data and Soilprop_decomp);
+In the same plots detritivores (bacteria, fungi and microarthropods) were quantified in the summer of 2021 (Soilprop_decomp);
+Earthworm data was collected in the same plots in the autumn of 2022 (Soilprop_decomp).;
+;
+;
+;
 File: MASTER_LML;
 ;
 vb_code;Code to match with soil properties
